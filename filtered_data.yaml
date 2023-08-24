@@ -1,0 +1,20 @@
+title: PetStore
+version: 1.1
+baseUri: http://mocksvc.mulesoft.com/mocks/xxxx/{version}
+/users:
+  /user:
+    /authentication:
+      displayName: user authentication
+      post:
+        description: user authentication
+        body: {application/json: null}
+        responses:
+          200:
+            body: {application/json: null}
+    /userInfo:
+      displayName: user all Information
+      get:
+        description: user all Information
+        responses:
+          200:
+            body: {application/json: null}
