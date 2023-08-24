@@ -1,6 +1,7 @@
 package com.example.gasc.service;
 
 import com.example.gasc.util.DwlUtil;
+import com.example.gasc.util.JavaUtil;
 import com.example.gasc.util.XmlUtil;
 import com.example.gasc.util.YamlUtil;
 import org.yaml.snakeyaml.Yaml;
@@ -73,9 +74,17 @@ public class RamlCompletionService {
                             }
                         }
 
+                        String requestBodyClass = "";
+                        if (javaClasses.size() > 1) {
+                            String newClassName=key.replace("/", "");
+                            requestBodyClass = JavaUtil.mergeClasses(projectPath, javaClasses, newClassName);
+                        } else if (javaClasses.size() == 1) {
+                            requestBodyClass = javaClasses.get(0);
+                        }
+
                         // For this example, I'm adding the list of Java classes to the body map.
                         // Adjust this according to your actual requirement.
-                        bodyMap.put("application/json", javaClasses);
+                        bodyMap.put("application/json", requestBodyClass);
                     }
                 }
             }
