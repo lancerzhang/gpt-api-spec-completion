@@ -2,16 +2,18 @@ package com.example.gasc.util;
 
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.Map;
 
 
 public class YamlFilter {
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> filterYamlByAnother(File dataFile, File filterFile) {
+    public static Map<Object, Object> filterYamlByAnother(File dataFile, File filterFile) {
         Yaml yaml = new Yaml();
-        Map<String, Object> dataMap;
-        Map<String, Object> filterMap;
+        Map<Object, Object> dataMap;
+        Map<Object, Object> filterMap;
         try {
             dataMap = yaml.load(new FileInputStream(dataFile));
             filterMap = yaml.load(new FileInputStream(filterFile));
@@ -24,13 +26,13 @@ public class YamlFilter {
     }
 
     @SuppressWarnings("unchecked")
-    private static void filterData(Map<String, Object> data, Map<String, Object> filter) {
-        data.keySet().removeIf(key -> key.startsWith("/") && !filter.containsKey(key));
-        for (String key : data.keySet()) {
+    private static void filterData(Map<Object, Object> data, Map<Object, Object> filter) {
+        data.keySet().removeIf(key -> ((String) key).startsWith("/") && !filter.containsKey(key));
+        for (Object key : data.keySet()) {
             Object dataValue = data.get(key);
             Object filterValue = filter.get(key);
             if (dataValue instanceof Map && filterValue instanceof Map) {
-                filterData((Map<String, Object>) dataValue, (Map<String, Object>) filterValue);
+                filterData((Map<Object, Object>) dataValue, (Map<Object, Object>) filterValue);
             }
         }
     }
