@@ -7,6 +7,8 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -15,8 +17,8 @@ public class JavaUtil {
     /**
      * Merges given Java classes into a new one.
      *
-     * @param projectPath Path to the root of the project.
-     * @param classNames A list of fully qualified class names to merge.
+     * @param projectPath  Path to the root of the project.
+     * @param classNames   A list of fully qualified class names to merge.
      * @param newClassName The simple name of the new class (without the package name).
      * @return The fully qualified name of the new class.
      * @throws IOException If there's an error reading or writing the files.
@@ -58,6 +60,23 @@ public class JavaUtil {
 
     private static String getPathFromQualifiedName(String projectPath, String qualifiedName) {
         return projectPath + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + qualifiedName.replace('.', File.separatorChar) + ".java";
+    }
+
+    public static String convertToCamelCase(String input) {
+        String[] words = input.split("/");
+        StringBuilder camelCaseBuilder = new StringBuilder();
+
+        for (String word : words) {
+            camelCaseBuilder.append(word.substring(0, 1).toUpperCase()).append(word.substring(1));
+        }
+
+        return camelCaseBuilder.toString();
+    }
+
+    public static Class<?> loadClassFromFile(String className, String pathToJarOrClassFiles) throws Exception {
+        URL url = new File(pathToJarOrClassFiles).toURI().toURL();
+        URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
+        return classLoader.loadClass(className);
     }
 
 }

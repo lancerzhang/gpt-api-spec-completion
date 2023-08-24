@@ -8,8 +8,6 @@ import java.util.regex.Pattern;
 
 public class DwlUtil {
 
-    private static final String DWL_FILE_PATH = "/src/main/resources/";
-
     /**
      * Get the Java class name from a DWL file.
      *
@@ -18,7 +16,7 @@ public class DwlUtil {
      * @throws IOException If there's an issue reading the file.
      */
     public static String getJavaClassFromDwl(String dwlFileName, String projectPath) throws IOException {
-        String content = new String(Files.readAllBytes(Paths.get(projectPath + DWL_FILE_PATH + dwlFileName)));
+        String content = new String(Files.readAllBytes(Paths.get(projectPath, "src", "main", "resources", dwlFileName)));
 
         Pattern pattern = Pattern.compile("class\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = pattern.matcher(content);

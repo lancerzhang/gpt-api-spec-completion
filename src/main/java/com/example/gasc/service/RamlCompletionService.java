@@ -1,19 +1,21 @@
 package com.example.gasc.service;
 
-import com.example.gasc.util.DwlUtil;
-import com.example.gasc.util.JavaUtil;
-import com.example.gasc.util.XmlUtil;
-import com.example.gasc.util.YamlUtil;
+import com.example.gasc.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class RamlCompletionService {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private String projectPath;
 
@@ -22,6 +24,9 @@ public class RamlCompletionService {
     }
 
     public void process() throws Exception {
+        logger.info("start to run mvn compile for: " + projectPath);
+        CommandUtils.runMvnCompile(projectPath);
+
         Map<Object, Object> filteredData = YamlUtil.filterRaml(projectPath);
 
         completeSpec(filteredData);
@@ -76,15 +81,26 @@ public class RamlCompletionService {
 
                         String requestBodyClass = "";
                         if (javaClasses.size() > 1) {
-                            String newClassName=key.replace("/", "");
+                            String newClassName = JavaUtil.convertToCamelCase("post" + newPath + "/RequestBody");
                             requestBodyClass = JavaUtil.mergeClasses(projectPath, javaClasses, newClassName);
                         } else if (javaClasses.size() == 1) {
                             requestBodyClass = javaClasses.get(0);
                         }
 
-                        // For this example, I'm adding the list of Java classes to the body map.
-                        // Adjust this according to your actual requirement.
-                        bodyMap.put("application/json", requestBodyClass);
+                        if (!requestBodyClass.isEmpty()) {
+
+                            Class<?> clazz = JavaUtil.loadClassFromFile(requestBodyClass, projectPath + "/target/classes/");
+                            String schema = SchemaUtil.generateJsonSchema(clazz);
+
+                            // Save schema to file
+                            String schemaFileName = clazz.getSimpleName() + ".json";
+                            Path schemaPath = Paths.get(projectPath, "src", "main", "api", "schemas", schemaFileName);
+                            Files.write(schemaPath, schema.getBytes());
+
+                            // For this example, I'm adding the list of Java classes to the body map.
+                            // Adjust this according to your actual requirement.
+                            bodyMap.put("application/json", requestBodyClass);
+                        }
                     }
                 }
             }

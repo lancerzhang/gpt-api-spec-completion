@@ -23,9 +23,6 @@ public class YamlUtil {
         File dataYaml = ramlFiles[0];
 
         File filterYaml = new File(apiSpecDirectory, "endPointFilter.yaml");
-        if (!filterYaml.exists()) {
-            throw new RuntimeException("endPointFilter.yaml not found in the specified directory.");
-        }
 
         return filterYamlByAnother(dataYaml, filterYaml);
     }
@@ -37,13 +34,15 @@ public class YamlUtil {
         Map<Object, Object> filterMap;
         try {
             dataMap = yaml.load(new FileInputStream(dataFile));
+            if (!filterFile.exists()) {
+                return dataMap;
+            }
             filterMap = yaml.load(new FileInputStream(filterFile));
+            filterData(dataMap, filterMap);
+            return dataMap;
         } catch (FileNotFoundException e) {
             throw new RuntimeException("Error reading the YAML files", e);
         }
-
-        filterData(dataMap, filterMap);
-        return dataMap;
     }
 
     @SuppressWarnings("unchecked")
