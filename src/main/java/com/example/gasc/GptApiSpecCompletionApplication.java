@@ -20,7 +20,8 @@ public class GptApiSpecCompletionApplication {
             String projectPath = "/Users/lancer/Development/ws/getting-started-hello-mule";
 
             RamlCompletionService service = new RamlCompletionService();
-            service.process(projectPath);
+            service.configure(projectPath);
+            service.process();
         };
     }
 }

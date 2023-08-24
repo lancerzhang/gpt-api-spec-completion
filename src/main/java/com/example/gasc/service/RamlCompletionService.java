@@ -1,18 +1,27 @@
 package com.example.gasc.service;
 
-import com.example.gasc.util.YamlFilter;
+import com.example.gasc.util.DwlUtil;
+import com.example.gasc.util.XmlUtil;
+import com.example.gasc.util.YamlUtil;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class RamlCompletionService {
 
-    public void process(String projectPath) {
-        Map<Object, Object> filteredData = filterRaml(projectPath);
+    private String projectPath;
+
+    public void configure(String projectPath) {
+        this.projectPath = projectPath;
+    }
+
+    public void process() throws Exception {
+        Map<Object, Object> filteredData = YamlUtil.filterRaml(projectPath);
 
         completeSpec(filteredData);
 
@@ -24,32 +33,14 @@ public class RamlCompletionService {
         }
     }
 
-    private Map<Object, Object> filterRaml(String projectPath) {
-        File apiSpecDirectory = Paths.get(projectPath, "src", "main", "api").toFile();
-        File[] ramlFiles = apiSpecDirectory.listFiles((dir, name) -> name.toLowerCase().endsWith(".raml"));
-        if (ramlFiles == null || ramlFiles.length == 0) {
-            throw new RuntimeException("No RAML file found in the specified directory.");
-        }
-        if (ramlFiles.length > 1) {
-            throw new RuntimeException("More than one RAML file found. Please ensure only one RAML file is present.");
-        }
-        File dataYaml = ramlFiles[0];
-
-        File filterYaml = new File(apiSpecDirectory, "endPointFilter.yaml");
-        if (!filterYaml.exists()) {
-            throw new RuntimeException("endPointFilter.yaml not found in the specified directory.");
-        }
-
-        return YamlFilter.filterYamlByAnother(dataYaml, filterYaml);
-    }
 
     @SuppressWarnings("unchecked")
-    private void completeSpec(Map<Object, Object> filteredData) {
+    private void completeSpec(Map<Object, Object> filteredData) throws Exception {
         completeSpecHelper(filteredData, "");
     }
 
     @SuppressWarnings("unchecked")
-    private void completeSpecHelper(Map<Object, Object> currentData, String currentPath) {
+    private void completeSpecHelper(Map<Object, Object> currentData, String currentPath) throws Exception {
         for (Object objKey : currentData.keySet()) {
             if (!(objKey instanceof String)) {
                 continue; // skip if key isn't a String
@@ -70,8 +61,21 @@ public class RamlCompletionService {
 
                     if (postMap.containsKey("body")) {
                         Map<Object, Object> bodyMap = (Map<Object, Object>) postMap.get("body");
-                        String combinedPath = "post:" + newPath + ":mobile_api-config";
-                        bodyMap.put("application/json", combinedPath);
+                        String flowName = "post:" + newPath + ":mobile_api-config";
+                        List<String> dwlPaths = XmlUtil.findDwl(flowName, projectPath);
+
+                        // Get Java classes from DWL files and add them to a list
+                        List<String> javaClasses = new ArrayList<>();
+                        for (String dwlPath : dwlPaths) {
+                            String javaClass = DwlUtil.getJavaClassFromDwl(dwlPath, projectPath);
+                            if (javaClass != null) {
+                                javaClasses.add(javaClass);
+                            }
+                        }
+
+                        // For this example, I'm adding the list of Java classes to the body map.
+                        // Adjust this according to your actual requirement.
+                        bodyMap.put("application/json", javaClasses);
                     }
                 }
             }
