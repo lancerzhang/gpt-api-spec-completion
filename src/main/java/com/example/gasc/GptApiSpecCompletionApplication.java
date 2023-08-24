@@ -1,6 +1,6 @@
-package com.example.speccompletion;
+package com.example.gasc;
 
-import com.example.speccompletion.service.RamlCompletionService;
+import com.example.gasc.service.RamlCompletionService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

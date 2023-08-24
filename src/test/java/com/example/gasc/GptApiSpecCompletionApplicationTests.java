@@ -1,4 +1,4 @@
-package com.example.speccompletion;
+package com.example.gasc;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,7 +1,7 @@
 # Read Me First
 The following was discovered as part of building this project:
 
-* The original package name 'com.example.gpt-api-spec-completion' is invalid and this project uses 'com.example.speccompletion' instead.
+* The original package name 'com.example.gpt-api-spec-completion' is invalid and this project uses 'com.example.gasc' instead.
 
 # Getting Started
 

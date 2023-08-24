@@ -1,4 +1,4 @@
-package com.example.speccompletion.service;
+package com.example.gasc.service;
 
 import org.raml.v2.api.RamlModelBuilder;
 import org.raml.v2.api.RamlModelResult;
