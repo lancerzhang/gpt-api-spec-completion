@@ -24,7 +24,6 @@ public class RamlCompletionService {
     }
 
     public void process() throws Exception {
-        logger.info("start to run mvn compile for: " + projectPath);
         CommandUtils.runMvnCompile(projectPath);
 
         Map<Object, Object> filteredData = YamlUtil.filterRaml(projectPath);
