@@ -24,7 +24,7 @@ public class RamlCompletionService {
     }
 
     public void process() throws Exception {
-        CommandUtils.runMvnCompile(projectPath);
+//        CommandUtils.runMvnCompile(projectPath);
 
         Map<Object, Object> filteredData = YamlUtil.filterRaml(projectPath);
 

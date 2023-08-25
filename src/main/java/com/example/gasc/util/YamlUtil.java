@@ -70,15 +70,16 @@ public class YamlUtil {
         return yamlStructure;
     }
 
-    @SuppressWarnings("unchecked")
     protected static void filterData(Map<Object, Object> data, Map<Object, Object> filter) {
         data.keySet().removeIf(key -> ((String) key).startsWith("/") && !filter.containsKey(key));
         for (Object key : data.keySet()) {
             Object dataValue = data.get(key);
             Object filterValue = filter.get(key);
+
             if (dataValue instanceof Map && filterValue instanceof Map) {
                 filterData((Map<Object, Object>) dataValue, (Map<Object, Object>) filterValue);
             }
         }
     }
+
 }
