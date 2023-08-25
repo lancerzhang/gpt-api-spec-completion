@@ -4,6 +4,7 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.stmt.BlockStmt;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,10 +34,12 @@ public class JavaUtil {
 
             CompilationUnit cu = StaticJavaParser.parse(file);
 
-            // Extract fields from current class and add to new class
+            // Extract fields from current class, add to new class and generate setters/getters
             List<FieldDeclaration> fields = cu.findAll(FieldDeclaration.class);
             for (FieldDeclaration field : fields) {
-                newClass.addMember(field.clone());
+                FieldDeclaration clonedField = field.clone();
+                newClass.addMember(clonedField);
+                generateSetterAndGetters(newClass, clonedField);
             }
 
             // Extract imports from current class and add to new CompilationUnit
@@ -57,6 +60,21 @@ public class JavaUtil {
         return packageName + "." + newClassName;
     }
 
+    private static void generateSetterAndGetters(ClassOrInterfaceDeclaration newClass, FieldDeclaration field) {
+        String fieldName = field.getVariable(0).getNameAsString();
+        String capitalizedField = Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+
+        // Generate Getter
+        newClass.addMethod("get" + capitalizedField)
+                .setType(field.getElementType())
+                .setBody(new BlockStmt().addStatement("return " + fieldName + ";"));
+
+        // Generate Setter
+        newClass.addMethod("set" + capitalizedField)
+                .setType("void")
+                .addParameter(field.getElementType(), fieldName)
+                .setBody(new BlockStmt().addStatement("this." + fieldName + " = " + fieldName + ";"));
+    }
 
     private static String getPathFromQualifiedName(String projectPath, String qualifiedName) {
         return projectPath + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + qualifiedName.replace('.', File.separatorChar) + ".java";

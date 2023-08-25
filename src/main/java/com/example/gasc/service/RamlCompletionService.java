@@ -94,7 +94,7 @@ public class RamlCompletionService {
 
                             // Save schema to file
                             String schemaFileName = clazz.getSimpleName() + ".json";
-                            Path schemaPath = Paths.get(projectPath, "src", "main", "api", "schemas", schemaFileName);
+                            Path schemaPath = Paths.get(projectPath, "src", "main", "api", "schema", schemaFileName);
                             Files.write(schemaPath, schema.getBytes());
 
                             // For this example, I'm adding the list of Java classes to the body map.
