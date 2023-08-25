@@ -44,26 +44,33 @@ public class XmlUtil {
 
             // Search for the <flow> element with the specified name
             NodeList flowList = doc.getElementsByTagName("flow");
-            for (int i = 0; i < flowList.getLength(); i++) {
-                Node flowNode = flowList.item(i);
-                if (flowNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element flowElement = (Element) flowNode;
-                    if (flowName.equals(flowElement.getAttribute("name"))) {
-                        // If flow-ref is found, recursively search for the referred flow
-                        NodeList flowRefList = flowElement.getElementsByTagName("flow-ref");
-                        for (int j = 0; j < flowRefList.getLength(); j++) {
-                            Element flowRefElement = (Element) flowRefList.item(j);
-                            searchDwl(flowRefElement.getAttribute("name"), directory, dwlPaths);
-                        }
+            NodeList subFlowList = doc.getElementsByTagName("sub-flow");
+            processNodeList(flowList, flowName, directory, dwlPaths);
+            processNodeList(subFlowList, flowName, directory, dwlPaths);
 
-                        // If dw:set-payload is found, collect DWL paths
-                        NodeList dwSetPayloadList = flowElement.getElementsByTagName("dw:set-payload");
-                        for (int k = 0; k < dwSetPayloadList.getLength(); k++) {
-                            Element dwSetPayloadElement = (Element) dwSetPayloadList.item(k);
-                            String resourcePath = dwSetPayloadElement.getAttribute("resource");
-                            if (resourcePath != null && resourcePath.startsWith("classpath:")) {
-                                dwlPaths.add(resourcePath.replace("classpath:", ""));
-                            }
+        }
+    }
+
+    private static void processNodeList(NodeList flowList, String flowName, File directory, List<String> dwlPaths) throws Exception {
+        for (int i = 0; i < flowList.getLength(); i++) {
+            Node flowNode = flowList.item(i);
+            if (flowNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element flowElement = (Element) flowNode;
+                if (flowName.equals(flowElement.getAttribute("name"))) {
+                    // If flow-ref is found, recursively search for the referred flow
+                    NodeList flowRefList = flowElement.getElementsByTagName("flow-ref");
+                    for (int j = 0; j < flowRefList.getLength(); j++) {
+                        Element flowRefElement = (Element) flowRefList.item(j);
+                        searchDwl(flowRefElement.getAttribute("name"), directory, dwlPaths);
+                    }
+
+                    // If dw:set-payload is found, collect DWL paths
+                    NodeList dwSetPayloadList = flowElement.getElementsByTagName("dw:set-payload");
+                    for (int k = 0; k < dwSetPayloadList.getLength(); k++) {
+                        Element dwSetPayloadElement = (Element) dwSetPayloadList.item(k);
+                        String resourcePath = dwSetPayloadElement.getAttribute("resource");
+                        if (resourcePath != null && resourcePath.startsWith("classpath:")) {
+                            dwlPaths.add(resourcePath.replace("classpath:", ""));
                         }
                     }
                 }
