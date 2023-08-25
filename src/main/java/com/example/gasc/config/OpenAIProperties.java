@@ -1,6 +1,5 @@
 package com.example.gasc.config;
 
-import com.example.gasc.model.GptModel;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

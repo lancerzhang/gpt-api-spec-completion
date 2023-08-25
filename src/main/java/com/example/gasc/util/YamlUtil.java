@@ -16,8 +16,8 @@ import java.util.Map;
 
 public class YamlUtil {
 
-    private static final String filterFileName = "endPointFilter.txt";
     private static final Logger logger = LoggerFactory.getLogger(YamlUtil.class);
+    private static final String filterFileName = "endPointFilter.txt";
 
     public static Map<Object, Object> filterRaml(String projectPath) {
         File apiSpecDirectory = Paths.get(projectPath, "src", "main", "api").toFile();
@@ -35,7 +35,6 @@ public class YamlUtil {
         return filterYamlByAnother(apiYaml, filterYaml);
     }
 
-    @SuppressWarnings("unchecked")
     public static Map<Object, Object> filterYamlByAnother(File dataFile, File filterFile) {
         Yaml yaml = new Yaml();
         Map<Object, Object> dataMap;

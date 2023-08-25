@@ -1,12 +1,22 @@
 package com.example.gasc.service;
 
+import com.example.gasc.config.GptModel;
+import com.example.gasc.model.openai.Message;
+import com.example.gasc.model.openai.OpenAIResult;
 import com.example.gasc.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,10 +24,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Service
+@Scope("prototype")
 public class RamlCompletionService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    @Autowired
+    private OpenAIApiService openAIApiService;
 
     private String projectPath;
+    private String examplesFilenames;
+    @Autowired
+    private GptModel gptModel;
+    @Value("classpath:prompts/search_examples.txt")
+    private Resource searchExamples;
+    @Value("classpath:prompts/generate_schema.txt")
+    private Resource generateSchema;
 
     public void configure(String projectPath) {
         this.projectPath = projectPath;
@@ -25,6 +46,10 @@ public class RamlCompletionService {
 
     public void process() throws Exception {
 //        CommandUtils.runMvnCompile(projectPath);
+
+        // Define the path
+        Path dir = Paths.get(projectPath, "src", "main", "api", "examples");
+        examplesFilenames = FileUtil.getFilenameAsString(dir);
 
         Map<Object, Object> filteredData = YamlUtil.filterRaml(projectPath);
 
@@ -39,13 +64,11 @@ public class RamlCompletionService {
     }
 
 
-    @SuppressWarnings("unchecked")
-    private void completeSpec(Map<Object, Object> filteredData) throws Exception {
+    protected void completeSpec(Map<Object, Object> filteredData) throws Exception {
         completeSpecHelper(filteredData, "");
     }
 
-    @SuppressWarnings("unchecked")
-    private void completeSpecHelper(Map<Object, Object> currentData, String currentPath) throws Exception {
+    protected void completeSpecHelper(Map<Object, Object> currentData, String currentPath) throws Exception {
         for (Object objKey : currentData.keySet()) {
             if (!(objKey instanceof String)) {
                 continue; // skip if key isn't a String
@@ -101,7 +124,22 @@ public class RamlCompletionService {
     }
 
     protected void generateSchemaByGPT(List<String> dwlPaths, String newPath, Map<Object, Object> bodyMap) throws Exception {
+        String task = "search_examples";
+        ArrayList<Message> messages = OpenAIApiService.createInitialMessages();
+        String promptTemplate = loadTemplate(task);
+        String prompt = String.format(promptTemplate, newPath, examplesFilenames);
+        OpenAIApiService.addUserMessages(messages, prompt);
+        logger.debug(prompt);
+        OpenAIResult result = openAIApiService.post(task, gptModel, messages);
+        logger.debug(result.getContent());
+        List<String> codeBlocks = FileUtil.extractMarkdownCodeBlocks(result.getContent());
 
+        if (codeBlocks.size() != 2) {
+            logger.info("Expect two code block in openAI response but it's not.");
+        } else {
+            String exampleRequestStr = codeBlocks.get(0);
+            String exampleResponseStr = codeBlocks.get(1);
+        }
     }
 
     protected void generateSchema(List<String> javaClasses, String newPath, Map<Object, Object> bodyMap) throws Exception {
@@ -132,4 +170,20 @@ public class RamlCompletionService {
     }
 
 
+    protected String loadTemplate(String templateType) throws IOException {
+        Resource resourceToUse;
+        switch (templateType) {
+            case "search_examples":
+                resourceToUse = searchExamples;
+                break;
+            case "generate_schema":
+                resourceToUse = generateSchema;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid template type: " + templateType);
+        }
+
+        byte[] bytes = FileCopyUtils.copyToByteArray(resourceToUse.getInputStream());
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
 }

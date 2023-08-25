@@ -23,11 +23,7 @@ openai:
         input-1k: 0.06
         output-1k: 0.12
 
-steps:
-  coverage:
-    - deployment: gpt35turbo
-      model: gpt-35-turbo
-      context-length: context-4k
-    - deployment: gpt35turbo
-      model: gpt-35-turbo
-      context-length: context-4k
+gpt-model:
+  deployment: gpt35turbo
+  model: gpt-35-turbo
+  context-length: context-4k

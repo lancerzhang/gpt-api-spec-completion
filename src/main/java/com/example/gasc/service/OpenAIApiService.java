@@ -1,7 +1,7 @@
 package com.example.gasc.service;
 
+import com.example.gasc.config.GptModel;
 import com.example.gasc.config.OpenAIProperties;
-import com.example.gasc.model.GptModel;
 import com.example.gasc.model.openai.Message;
 import com.example.gasc.model.openai.OpenAIApiRequest;
 import com.example.gasc.model.openai.OpenAIApiResponse;
@@ -32,6 +32,22 @@ public class OpenAIApiService {
     @Autowired
     public OpenAIApiService(OpenAIProperties openAIProperties) {
         this.openAIProperties = openAIProperties;
+    }
+
+    public static ArrayList<Message> createInitialMessages() {
+        ArrayList<Message> messages = new ArrayList<>();
+        Message systemMessage = new Message();
+        systemMessage.setRole("system");
+        systemMessage.setContent("You are a super smart java developer.");
+        messages.add(systemMessage);
+        return messages;
+    }
+
+    public static void addUserMessages(ArrayList<Message> messages, String prompt) {
+        Message userMessage = new Message();
+        userMessage.setRole("user");
+        userMessage.setContent(prompt);
+        messages.add(userMessage);
     }
 
     public OpenAIResult post(String task, GptModel gptModel, ArrayList<Message> messages) throws IOException {
@@ -83,5 +99,4 @@ public class OpenAIApiService {
 
         return new OpenAIResult(content, cost);
     }
-
 }
