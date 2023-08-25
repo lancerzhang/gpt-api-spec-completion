@@ -25,7 +25,7 @@ public class XmlUtil {
         return dwlPaths;
     }
 
-    private static void searchDwl(String flowName, File directory, List<String> dwlPaths) throws Exception {
+    protected static void searchDwl(String flowName, File directory, List<String> dwlPaths) throws Exception {
         // Find all XML files in the directory
         File[] xmlFiles = directory.listFiles(new FilenameFilter() {
             @Override
@@ -51,7 +51,7 @@ public class XmlUtil {
         }
     }
 
-    private static void processNodeList(NodeList flowList, String flowName, File directory, List<String> dwlPaths) throws Exception {
+    protected static void processNodeList(NodeList flowList, String flowName, File directory, List<String> dwlPaths) throws Exception {
         for (int i = 0; i < flowList.getLength(); i++) {
             Node flowNode = flowList.item(i);
             if (flowNode.getNodeType() == Node.ELEMENT_NODE) {

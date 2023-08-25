@@ -60,23 +60,25 @@ public class JavaUtil {
         return packageName + "." + newClassName;
     }
 
-    private static void generateSetterAndGetters(ClassOrInterfaceDeclaration newClass, FieldDeclaration field) {
+    protected static void generateSetterAndGetters(ClassOrInterfaceDeclaration newClass, FieldDeclaration field) {
         String fieldName = field.getVariable(0).getNameAsString();
         String capitalizedField = Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
 
         // Generate Getter
         newClass.addMethod("get" + capitalizedField)
                 .setType(field.getElementType())
+                .addModifier(com.github.javaparser.ast.Modifier.Keyword.PUBLIC)
                 .setBody(new BlockStmt().addStatement("return " + fieldName + ";"));
 
         // Generate Setter
         newClass.addMethod("set" + capitalizedField)
                 .setType("void")
                 .addParameter(field.getElementType(), fieldName)
+                .addModifier(com.github.javaparser.ast.Modifier.Keyword.PUBLIC)
                 .setBody(new BlockStmt().addStatement("this." + fieldName + " = " + fieldName + ";"));
     }
 
-    private static String getPathFromQualifiedName(String projectPath, String qualifiedName) {
+    protected static String getPathFromQualifiedName(String projectPath, String qualifiedName) {
         return projectPath + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + qualifiedName.replace('.', File.separatorChar) + ".java";
     }
 

@@ -46,7 +46,7 @@ public class YamlUtil {
     }
 
     @SuppressWarnings("unchecked")
-    private static void filterData(Map<Object, Object> data, Map<Object, Object> filter) {
+    protected static void filterData(Map<Object, Object> data, Map<Object, Object> filter) {
         data.keySet().removeIf(key -> ((String) key).startsWith("/") && !filter.containsKey(key));
         for (Object key : data.keySet()) {
             Object dataValue = data.get(key);
