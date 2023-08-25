@@ -55,7 +55,7 @@ public class RamlCompletionService {
             Object value = currentData.get(key);
 
             String newPath = currentPath + key;  // Construct the new path for this level
-            logger.debug("processing path:" + newPath);
+            logger.debug("processing path: " + newPath);
 
             if (value instanceof Map) {
                 // This recursive call ensures that all nested maps are processed.
@@ -67,10 +67,10 @@ public class RamlCompletionService {
 
                     if (postMap.containsKey("body")) {
                         Map<Object, Object> bodyMap = (Map<Object, Object>) postMap.get("body");
-                        String flowName = "post:" + newPath + ":mobile_api-config";
-                        logger.debug("flowName:" + flowName);
+                        String flowName = "post: " + newPath + ":mobile_api-config";
+                        logger.debug("flowName: " + flowName);
                         List<String> dwlPaths = XmlUtil.findDwl(flowName, projectPath);
-                        logger.debug("dwlPaths:" + dwlPaths);
+                        logger.debug("dwlPaths: " + dwlPaths);
 
                         // Get Java classes from DWL files and add them to a list
                         List<String> javaClasses = new ArrayList<>();
@@ -80,7 +80,7 @@ public class RamlCompletionService {
                                 javaClasses.add(javaClass);
                             }
                         }
-                        logger.debug("javaClasses:" + javaClasses);
+                        logger.debug("javaClasses: " + javaClasses);
 
                         String requestBodyClass = "";
                         if (javaClasses.size() > 1) {
@@ -89,7 +89,7 @@ public class RamlCompletionService {
                         } else if (javaClasses.size() == 1) {
                             requestBodyClass = javaClasses.get(0);
                         }
-                        logger.debug("requestBodyClass:" + requestBodyClass);
+                        logger.debug("requestBodyClass: " + requestBodyClass);
 
                         if (!requestBodyClass.isEmpty()) {
 
@@ -99,7 +99,7 @@ public class RamlCompletionService {
                             // Save schema to file
                             String schemaFileName = clazz.getSimpleName() + ".json";
                             Path schemaPath = Paths.get(projectPath, "src", "main", "api", "schema", schemaFileName);
-                            logger.debug("writing schema:" + schemaPath);
+                            logger.debug("writing schema: " + schemaPath);
                             Files.write(schemaPath, schema.getBytes());
 
                             // For this example, I'm adding the list of Java classes to the body map.

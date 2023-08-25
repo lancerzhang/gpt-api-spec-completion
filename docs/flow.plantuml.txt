@@ -1,0 +1,37 @@
+@startuml
+
+start
+
+:Load API RAML file;
+
+if (endPointFilter.txt exists?) then (yes)
+  :Filter out unnecessary endpoints;
+else (no)
+  :Continue with all endpoints;
+endif
+
+:Begin loop for each endpoint and method;
+
+:Foreach endpoint & method:
+  :Search mule flow XML folder;
+
+  :Recursively traverse them;
+
+  :Find all dwl files;
+
+  if (all dwl files have java class file name?) then (yes)
+    :Generate JSON schema using Java classes;
+  else (no)
+    :Collect all dwl file content;
+    :Collect example file content;
+    :Send content to ChatGPT;
+    :ChatGPT generates JSON schema definition;
+  endif
+
+  :Update API RAML file with schema and examples;
+
+:End loop;
+
+stop
+
+@enduml
