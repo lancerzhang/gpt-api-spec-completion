@@ -3,6 +3,7 @@ package com.example.gasc.util;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,5 +26,34 @@ public class DwlUtil {
             return matcher.group(1);
         }
         return null;
+    }
+
+    /**
+     * Get the content of multiple DWL files.
+     *
+     * @param dwlVars     List of DWL variable definitions, e.g. "abc=dwl/setUserInfoReq.dwl".
+     * @param projectPath Path to the project.
+     * @return Concatenated content of the DWL files.
+     * @throws IOException If there's an issue reading the files.
+     */
+    public static String getDwlContent(List<String> dwlVars, String projectPath) throws IOException {
+        StringBuilder contentBuilder = new StringBuilder();
+
+        for (String dwlVar : dwlVars) {
+            String[] parts = dwlVar.split("=");
+            String variableName = parts.length > 1 ? parts[0].trim() : null;
+            String dwlFileName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+
+            String fileContent = new String(Files.readAllBytes(Paths.get(projectPath, "src", "main", "resources", dwlFileName)));
+
+            if (variableName != null) {
+                contentBuilder.append("variableName=").append(variableName)
+                        .append(", dwlFilename=").append(dwlFileName)
+                        .append("\n");
+            }
+            contentBuilder.append(fileContent).append("\n");
+        }
+
+        return contentBuilder.toString();
     }
 }

@@ -70,7 +70,8 @@ public class XmlUtil {
                         Element dwSetPayloadElement = (Element) dwSetPayloadList.item(k);
                         String resourcePath = dwSetPayloadElement.getAttribute("resource");
                         if (resourcePath != null && resourcePath.startsWith("classpath:")) {
-                            dwlPaths.add(resourcePath.replace("classpath:", ""));
+                            String variableName = dwSetPayloadElement.getAttribute("variableName");
+                            dwlPaths.add(variableName + "=" + resourcePath.replace("classpath:", ""));
                         }
                     }
                 }
