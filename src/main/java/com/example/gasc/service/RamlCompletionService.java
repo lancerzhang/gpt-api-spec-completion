@@ -99,8 +99,10 @@ public class RamlCompletionService {
     protected OpenAIResult getGptResponse(String task, String prompt) throws IOException {
         ArrayList<Message> messages = OpenAIApiService.createInitialMessages();
         OpenAIApiService.addUserMessages(messages, prompt);
+        logger.debug("Sending prompt to ChatGPT. ");
         logger.debug(prompt);
         OpenAIResult result = openAIApiService.post(task, gptModel, messages);
+        logger.debug("Got return from ChatGPT.");
         logger.debug(result.getContent());
         return result;
     }
@@ -138,24 +140,30 @@ public class RamlCompletionService {
 
     protected void generateSchema(String methodName, String apiPath, List<String> dwlVars, List<String> javaContents, List<String> exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
         String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(0));
-        String exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(1));
+        String exampleRequestContent = "";
+        if (methodName.equals("post")) {
+            exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(1));
+        }
         String dwlContent = DwlUtil.getDwlContent(dwlVars, projectPath);
         String task = "generate_" + methodName + "_schema";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, dwlContent, javaContents, exampleRequestContent, exampleResponseContent);
+        String prompt = String.format(promptTemplate, apiPath, dwlContent, javaContents, exampleResponseContent, exampleRequestContent);
         OpenAIResult result = getGptResponse(task, prompt);
         List<String> schemaCode = FileUtil.extractMarkdownCodeBlocks(result.getContent());
-        Map<String, String> requestMap = new HashMap<>();
-        String requestSchemaName = JavaUtil.convertToCamelCase("post" + apiPath + "/RequestBody");
-        String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode.get(0));
-        requestMap.put("schema", "!include schema/" + requestSchemaFileName);
-        postBodyMap.put("application/json", requestMap);
 
         Map<String, String> responseMap = new HashMap<>();
-        String responseSchemaName = JavaUtil.convertToCamelCase("post" + apiPath + "/ResponseBody");
-        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode.get(1));
+        String responseSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/ResponseBody");
+        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode.get(0));
         responseMap.put("schema", "!include schema/" + responseSchemaFileName);
         postBodyMap.put("application/json", responseMap);
+
+        if (methodName.equals("post")) {
+            Map<String, String> requestMap = new HashMap<>();
+            String requestSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
+            String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode.get(1));
+            requestMap.put("schema", "!include schema/" + requestSchemaFileName);
+            postBodyMap.put("application/json", requestMap);
+        }
     }
 
     protected List<String> searchExamples(String methodName, String apiPath) throws IOException {
