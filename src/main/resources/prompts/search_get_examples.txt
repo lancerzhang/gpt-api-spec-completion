@@ -1,0 +1,9 @@
+You are working on a mobile banking API project, you need to find out the response example files for this API "GET:%s". You should return in below format:
+
+Response:
+```
+<Response example file name>
+```
+
+All example file name:
+%s

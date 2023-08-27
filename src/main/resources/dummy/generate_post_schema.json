@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-7FMw5nBSebsOcz0DflieR4kGC62Rj",
+  "object": "chat.completion",
+  "created": 1.683897441E9,
+  "model": "gpt-35-turbo",
+  "choices": [
+    {
+      "index": 0.0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "Request Schema:\n```\n{\n  \"type\" : \"object\",\n  \"id\" : \"urn:jsonschema:com:example:beans:AuthenticationRequest\",\n  \"properties\" : {\n    \"username\" : {\n      \"type\" : \"string\"\n    },\n    \"password\" : {\n      \"type\" : \"string\"\n    }\n  }\n}\n```\n\nResponse Schema:\n```\n{\n  \"type\" : \"object\",\n  \"id\" : \"urn:jsonschema:com:example:beans:AuthenticationRequest\",\n  \"properties\" : {\n    \"username\" : {\n      \"type\" : \"string\"\n    },\n    \"password\" : {\n      \"type\" : \"string\"\n    }\n  }\n}\n```"
+      }
+    }
+  ],
+  "usage": {
+    "completion_tokens": 183.0,
+    "prompt_tokens": 25.0,
+    "total_tokens": 208.0
+  }
+}

@@ -11,7 +11,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class XmlUtil {
 
@@ -77,6 +79,19 @@ public class XmlUtil {
                 }
             }
         }
+    }
+
+    public static <T> Map<Object, Object> getPathNode(Map<Object, Object> map, T... keys) {
+        for (int i = 0; i < keys.length - 1; i++) {
+            map.putIfAbsent(keys[i], new HashMap<>());
+            map = (Map<Object, Object>) map.get(keys[i]);
+        }
+
+        if (!map.containsKey(keys[keys.length - 1])) {
+            map.put(keys[keys.length - 1], new HashMap<>());
+        }
+
+        return (Map<Object, Object>) map.get(keys[keys.length - 1]);
     }
 
 }

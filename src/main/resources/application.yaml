@@ -24,6 +24,6 @@ openai:
         output-1k: 0.12
 
 gpt-model:
-  deployment: gpt35turbo
+  deployment: ${AZURE_OPENAI_DEPLOYMENT}
   model: gpt-35-turbo
   context-length: context-4k

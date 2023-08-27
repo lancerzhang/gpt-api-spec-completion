@@ -18,24 +18,14 @@ endif
 
   :Find all dwl files;
 
-  if (all dwl files have java class file name?) then (yes)
-    :Generate JSON schema using Java classes;
-
-    if (more than one Java class?) then (yes)
-      :Combine them as a new class;
-    else (no)
-      :Proceed with single Java class;
-    endif
-
-  else (no)
-    :Collect all example file names;
-    :Send full API path and example names to ChatGPT;
-    :Receive request and response file names from ChatGPT;
-    :Collect content from example files and all DWL files;
-    :Send content to ChatGPT;
-    note right: Generate JSON schema definition using the received content
-    :Receive JSON schema definition from ChatGPT;
-  endif
+  :Collect all example file names;
+  :Send full API path and example names to ChatGPT;
+  :Receive request and response file names from ChatGPT;
+  :Collect content of java class in DWL files;
+  :Collect content from example files, java files and all DWL files;
+  :Send content to ChatGPT;
+  note right: Generate JSON schema definition using the received content
+  :Receive JSON schema definition from ChatGPT;
 
   :Update API RAML file with schema and examples;
 

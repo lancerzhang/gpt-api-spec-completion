@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JavaUtil {
@@ -97,6 +99,38 @@ public class JavaUtil {
         URL url = new File(pathToJarOrClassFiles).toURI().toURL();
         URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
         return classLoader.loadClass(className);
+    }
+
+    /**
+     * Get the content of all Java files based on the list of class names.
+     *
+     * @param javaClasses List of fully qualified class names.
+     * @param projectPath Root path of the Maven project.
+     * @return List of file contents.
+     * @throws IOException If there's an issue accessing or reading the files.
+     */
+    public static List<String> getJavaFileContents(List<String> javaClasses, String projectPath) throws IOException {
+        List<String> fileContents = new ArrayList<>();
+
+        for (String className : javaClasses) {
+            Path filePath = getJavaFilePath(projectPath, className);
+            String content = new String(Files.readAllBytes(filePath));
+            fileContents.add(content);
+        }
+
+        return fileContents;
+    }
+
+    /**
+     * Convert a fully qualified class name to its corresponding file path.
+     *
+     * @param projectRoot Root path of the Maven project.
+     * @param className   Fully qualified class name.
+     * @return Path corresponding to the Java file.
+     */
+    private static Path getJavaFilePath(String projectRoot, String className) {
+        String relativePath = className.replace('.', '/') + ".java";
+        return Paths.get(projectRoot, "src", "main", "java", relativePath);
     }
 
 }

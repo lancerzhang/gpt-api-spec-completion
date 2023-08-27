@@ -7,15 +7,16 @@ import com.example.gasc.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Scope("prototype")
@@ -30,15 +32,13 @@ public class RamlCompletionService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     @Autowired
     private OpenAIApiService openAIApiService;
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     private String projectPath;
     private String examplesFilenames;
     @Autowired
     private GptModel gptModel;
-    @Value("classpath:prompts/search_examples.txt")
-    private Resource searchExamples;
-    @Value("classpath:prompts/generate_schema.txt")
-    private Resource generateSchema;
 
     public void configure(String projectPath) {
         this.projectPath = projectPath;
@@ -77,50 +77,20 @@ public class RamlCompletionService {
             String key = (String) objKey;
             Object value = currentData.get(key);
 
-            String newPath = currentPath + key;  // Construct the new path for this level
-            logger.debug("processing path: " + newPath);
+            String apiPath = currentPath + key;  // Construct the new path for this level
+            logger.debug("processing path: " + apiPath);
 
             if (value instanceof Map) {
+                Map<Object, Object> valueNode = (Map<Object, Object>) value;
                 // This recursive call ensures that all nested maps are processed.
-                completeSpecHelper((Map<Object, Object>) value, newPath);
+                completeSpecHelper(valueNode, apiPath);
 
-                // If current map has a "post" attribute, add the constructed path to its body's application/json
-                if (((Map<Object, Object>) value).containsKey("post")) {
-                    Map<Object, Object> postMap = (Map<Object, Object>) ((Map<Object, Object>) value).get("post");
-                    Map<Object, Object> postResponseMap = (Map<Object, Object>) postMap.get("responses");
-                    Map<Object, Object> okResponseMap = (Map<Object, Object>) postResponseMap.get(200);
-                    Map<Object, Object> responseBodyMap = (Map<Object, Object>) okResponseMap.get("body");
-                    if (postMap.containsKey("body")) {
-                        Map<Object, Object> postBodyMap = (Map<Object, Object>) postMap.get("body");
-                        String flowName = "post:" + newPath + ":mobile_api-config";
-                        logger.debug("flowName: " + flowName);
-                        List<String> dwlVars = XmlUtil.findDwl(flowName, projectPath);
-                        logger.debug("dwlVars: " + dwlVars);
+                if (valueNode.containsKey("get")) {
+                    prepareSchemaGeneration("get", apiPath, valueNode);
+                }
 
-                        // Get Java classes from DWL files and add them to a list
-                        List<String> javaClasses = new ArrayList<>();
-                        for (String dwlVar : dwlVars) {
-                            String dwlPath = dwlVar.split("=")[1];
-                            String javaClass = DwlUtil.getJavaClassFromDwl(dwlPath, projectPath);
-                            if (javaClass != null) {
-                                javaClasses.add(javaClass);
-                            }
-                        }
-                        logger.debug("javaClasses: " + javaClasses);
-
-                        if (dwlVars.isEmpty()) {
-                            logger.warn("Can't find any dwl for: " + flowName);
-                            continue;
-                        }
-
-                        if (dwlVars.size() == javaClasses.size()) {
-                            logger.info("All dwl file has class, can use program to generate schema.");
-                            generateSchemaByJava(javaClasses, newPath, postBodyMap);
-                        } else {
-                            logger.info("Some java class is missing, start to use ChatGPT");
-                            generateSchemasByGPT(dwlVars, newPath, postBodyMap, responseBodyMap);
-                        }
-                    }
+                if (valueNode.containsKey("post")) {
+                    prepareSchemaGeneration("post", apiPath, valueNode);
                 }
             }
         }
@@ -135,47 +105,62 @@ public class RamlCompletionService {
         return result;
     }
 
-    protected void generateSchemasByGPT(List<String> dwlVars, String apiPath, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
-        List<String> codeBlocks = searchExamples(apiPath);
-
-        if (codeBlocks.size() != 2) {
-            logger.info("Expect two code block in openAI response but it's not.");
-        } else {
-            generateSchema(dwlVars, apiPath, codeBlocks, postBodyMap, responseBodyMap);
+    protected void prepareSchemaGeneration(String methodName, String apiPath, Map<Object, Object> valueNode) throws Exception {
+        Map<Object, Object> requestBodyMap = XmlUtil.getPathNode(valueNode, methodName, "body");
+        Map<Object, Object> responseBodyMap = XmlUtil.getPathNode(valueNode, methodName, "responses", 200, "body");
+        String flowName = methodName + ":" + apiPath + ":mobile_api-config";
+        logger.debug("flowName: " + flowName);
+        List<String> dwlVars = XmlUtil.findDwl(flowName, projectPath);
+        logger.debug("dwlVars: " + dwlVars);
+        if (dwlVars.isEmpty()) {
+            logger.warn("Can't find any dwl for: " + flowName);
+            return;
         }
+
+        // Get Java classes from DWL files and add them to a list
+        List<String> javaClasses = new ArrayList<>();
+        for (String dwlVar : dwlVars) {
+            String dwlPath = dwlVar.split("=")[1];
+            String javaClass = DwlUtil.getJavaClassFromDwl(dwlPath, projectPath);
+            if (javaClass != null) {
+                javaClasses.add(javaClass);
+            }
+        }
+        logger.debug("javaClasses: " + javaClasses);
+
+        List<String> javaContents = JavaUtil.getJavaFileContents(javaClasses, projectPath);
+
+        List<String> exampleFilenames = searchExamples(methodName, apiPath);
+
+        generateSchema(methodName, apiPath, dwlVars, javaContents, exampleFilenames, requestBodyMap, responseBodyMap);
+
     }
 
-    protected void generateSchema(List<String> dwlVars, String apiPath, List<String> exampleCode, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
-        String exampleRequestFilenames = exampleCode.get(0);
-        String exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleRequestFilenames);
-        String exampleResponseFilenames = exampleCode.get(1);
-        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleResponseFilenames);
+    protected void generateSchema(String methodName, String apiPath, List<String> dwlVars, List<String> javaContents, List<String> exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
+        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(0));
+        String exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(1));
         String dwlContent = DwlUtil.getDwlContent(dwlVars, projectPath);
-        String task = "generate_schema";
-        String promptTemplate = loadTemplate(task);
-        String prompt = String.format(promptTemplate, apiPath, dwlContent, exampleRequestContent, exampleResponseContent);
+        String task = "generate_" + methodName + "_schema";
+        String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
+        String prompt = String.format(promptTemplate, apiPath, dwlContent, javaContents, exampleRequestContent, exampleResponseContent);
         OpenAIResult result = getGptResponse(task, prompt);
-        List<String> codeBlocks = FileUtil.extractMarkdownCodeBlocks(result.getContent());
-        if (codeBlocks.size() != 2) {
-            logger.info("Expect two code block in openAI response but it's not.");
-        } else {
-            Map<String, String> requestMap = new HashMap<>();
-            String requestSchemaName = JavaUtil.convertToCamelCase("post" + apiPath + "/RequestBody");
-            String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, codeBlocks.get(0));
-            requestMap.put("schema", "!include schema/" + requestSchemaFileName);
-            postBodyMap.put("application/json", requestMap);
+        List<String> schemaCode = FileUtil.extractMarkdownCodeBlocks(result.getContent());
+        Map<String, String> requestMap = new HashMap<>();
+        String requestSchemaName = JavaUtil.convertToCamelCase("post" + apiPath + "/RequestBody");
+        String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode.get(0));
+        requestMap.put("schema", "!include schema/" + requestSchemaFileName);
+        postBodyMap.put("application/json", requestMap);
 
-            Map<String, String> responseMap = new HashMap<>();
-            String responseSchemaName = JavaUtil.convertToCamelCase("post" + apiPath + "/ResponseBody");
-            String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, codeBlocks.get(1));
-            responseMap.put("schema", "!include schema/" + responseSchemaFileName);
-            postBodyMap.put("application/json", responseMap);
-        }
+        Map<String, String> responseMap = new HashMap<>();
+        String responseSchemaName = JavaUtil.convertToCamelCase("post" + apiPath + "/ResponseBody");
+        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode.get(1));
+        responseMap.put("schema", "!include schema/" + responseSchemaFileName);
+        postBodyMap.put("application/json", responseMap);
     }
 
-    protected List<String> searchExamples(String apiPath) throws IOException {
-        String task = "search_examples";
-        String promptTemplate = loadTemplate(task);
+    protected List<String> searchExamples(String methodName, String apiPath) throws IOException {
+        String task = "search_" + methodName + "_examples";
+        String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, examplesFilenames);
         OpenAIResult result = getGptResponse(task, prompt);
         return FileUtil.extractMarkdownCodeBlocks(result.getContent());
@@ -206,21 +191,10 @@ public class RamlCompletionService {
         }
     }
 
-
-    protected String loadTemplate(String templateType) throws IOException {
-        Resource resourceToUse;
-        switch (templateType) {
-            case "search_examples":
-                resourceToUse = searchExamples;
-                break;
-            case "generate_schema":
-                resourceToUse = generateSchema;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid template type: " + templateType);
+    public String readClasspathFile(String filename) throws IOException {
+        Resource resource = resourceLoader.getResource("classpath:" + filename);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            return reader.lines().collect(Collectors.joining("\n"));
         }
-
-        byte[] bytes = FileCopyUtils.copyToByteArray(resourceToUse.getInputStream());
-        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

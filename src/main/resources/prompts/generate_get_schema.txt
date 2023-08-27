@@ -1,0 +1,15 @@
+You are working on a mobile banking Mule API project, you need to write one response schema for API "GET:%s" according to dwl and examples. If there are more than one DWL files or examples, combine them as a new one. That's all information I have, don't ask me again. You should return in below format:
+
+Response Schema:
+```
+<JSD schema detail in json format>
+```
+
+All dwl file contents:
+%s
+
+All java class in dwl:
+%s
+
+Response example file content:
+%s
