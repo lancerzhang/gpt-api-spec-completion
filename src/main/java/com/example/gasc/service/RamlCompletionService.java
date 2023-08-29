@@ -19,7 +19,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +31,12 @@ import java.util.stream.Collectors;
 @Scope("prototype")
 public class RamlCompletionService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final String specPath = "/src/main/api/";
+    private final String exampleFolder = "examples";
     @Autowired
     private OpenAIApiService openAIApiService;
     @Autowired
     private ResourceLoader resourceLoader;
-
     private String projectPath;
     private String examplesFilenames;
     @Autowired
@@ -45,10 +47,11 @@ public class RamlCompletionService {
     }
 
     public void process() throws Exception {
+        Instant startTime = Instant.now();
 //        CommandUtils.runMvnCompile(projectPath);
 
         // Define the path
-        Path dir = Paths.get(projectPath, "src", "main", "api", "examples");
+        Path dir = FileUtil.getPath(projectPath + specPath + exampleFolder);
         examplesFilenames = FileUtil.getFilenames(dir);
 
         Map<Object, Object> filteredData = YamlUtil.filterRaml(projectPath);
@@ -56,11 +59,13 @@ public class RamlCompletionService {
         completeSpec(filteredData);
 
         Yaml yaml = new Yaml();
-        try (FileWriter writer = new FileWriter(Paths.get(projectPath, "src", "main", "api", "filtered_api.yaml").toFile())) {
+        try (FileWriter writer = new FileWriter(FileUtil.getPath(projectPath + specPath + "filtered_api.yaml").toFile())) {
             yaml.dump(filteredData, writer);
         } catch (IOException e) {
             throw new RuntimeException("Error writing to filtered_api.raml", e);
         }
+        Instant endTime = Instant.now();
+        logger.info("Job duration (seconds): " + Duration.between(startTime, endTime).getSeconds());
     }
 
 

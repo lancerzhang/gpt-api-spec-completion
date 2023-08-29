@@ -8,9 +8,10 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class SchemaUtil {
+    private static final String specPath = "/src/main/api/";
+    private static final String schemaFolder = "schema";
     private static final Logger logger = LoggerFactory.getLogger(SchemaUtil.class);
 
     public static String generateJsonSchema(Class<?> clazz) throws Exception {
@@ -23,7 +24,8 @@ public class SchemaUtil {
 
     public static String writeSchema(String projectPath, String name, String content) throws Exception {
         String filename = name + ".jsd";
-        Path schemaPath = Paths.get(projectPath, "src", "main", "api", "schema", filename);
+        Path schemaPath = FileUtil.getPath(projectPath + specPath + schemaFolder + filename);
+        ;
         logger.info("writing schema: " + schemaPath);
         Files.write(schemaPath, content.getBytes());
         return filename;

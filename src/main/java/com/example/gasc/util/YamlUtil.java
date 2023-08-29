@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +16,11 @@ import java.util.Map;
 public class YamlUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(YamlUtil.class);
+    private static final String specPath = "/src/main/api/";
     private static final String filterFileName = "endPointFilter.txt";
 
     public static Map<Object, Object> filterRaml(String projectPath) {
-        File apiSpecDirectory = Paths.get(projectPath, "src", "main", "api").toFile();
+        File apiSpecDirectory = FileUtil.getPath(projectPath + specPath).toFile();
         File[] ramlFiles = apiSpecDirectory.listFiles((dir, name) -> name.toLowerCase().endsWith(".raml"));
         if (ramlFiles == null || ramlFiles.length == 0) {
             throw new RuntimeException("No RAML file found in the specified directory.");

@@ -1,5 +1,6 @@
 package com.example.gasc.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -77,4 +78,13 @@ public class FileUtil {
 
         return contentBuilder.toString();
     }
+
+    public static String changeToSystemFileSeparator(String input) {
+        return input.replace("/", File.separator);
+    }
+
+    public static Path getPath(String linuxPath) {
+        return Paths.get(changeToSystemFileSeparator(linuxPath));
+    }
+
 }
