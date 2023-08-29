@@ -116,44 +116,39 @@ public class RamlCompletionService {
         Map<Object, Object> requestBodyMap = YamlUtil.getPathNode(valueNode, methodName, "body");
         Map<Object, Object> responseBodyMap = YamlUtil.getPathNode(valueNode, methodName, "responses", 200, "body");
         String flowName = methodName + ":" + apiPath + ":mobile_api-config";
-        String allMuleXml = XmlUtil.searchMuleXml(flowName, projectPath);
         logger.debug("flowName: " + flowName);
-        List<String> dwlVars = XmlUtil.findDwl(flowName, projectPath);
-        logger.debug("dwlVars: " + dwlVars);
-        if (dwlVars.isEmpty()) {
-            logger.warn("Can't find any dwl for: " + flowName);
-            return;
-        }
+        String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
 
-        // Get Java classes from DWL files and add them to a list
-        List<String> javaClasses = new ArrayList<>();
-        for (String dwlVar : dwlVars) {
-            String dwlPath = dwlVar.split("=")[1];
-            String javaClass = DwlUtil.getJavaClassFromDwl(dwlPath, projectPath);
-            if (javaClass != null) {
-                javaClasses.add(javaClass);
-            }
-        }
-        logger.debug("javaClasses: " + javaClasses);
-
-        List<String> javaContents = JavaUtil.getJavaFileContents(javaClasses, projectPath);
+        List<String> codeblocks = searchMuleFlow(methodName, apiPath, muleFlowXmlContent);
 
         List<String> exampleFilenames = searchExamples(methodName, apiPath);
 
-        generateSchema(methodName, apiPath, dwlVars, javaContents, exampleFilenames, requestBodyMap, responseBodyMap);
+        generateSchema(methodName, apiPath, codeblocks, exampleFilenames, requestBodyMap, responseBodyMap);
 
     }
 
-    protected void generateSchema(String methodName, String apiPath, List<String> dwlVars, List<String> javaContents, List<String> exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
+    protected void generateSchema(String methodName, String apiPath, List<String> codeblocks, List<String> exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
         String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(0));
+        String respDwlFileStr = codeblocks.get(0);
+        String respJavaClassesStr = codeblocks.get(1);
+        String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
+        String respJavaContents = JavaUtil.getJavaFileContents(respJavaClassesStr, projectPath);
+
         String exampleRequestContent = "";
+        String reqDwlContent = "";
+        String reqJavaContents = "";
+
         if (methodName.equals("post")) {
             exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(1));
+            String reqDwlFileStr = codeblocks.get(2);
+            String reqJavaClassesStr = codeblocks.get(3);
+            reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
+            reqJavaContents = JavaUtil.getJavaFileContents(reqJavaClassesStr, projectPath);
         }
-        String dwlContent = DwlUtil.getDwlContent(dwlVars, projectPath);
+
         String task = "generate_" + methodName + "_schema";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, dwlContent, javaContents, exampleResponseContent, exampleRequestContent);
+        String prompt = String.format(promptTemplate, apiPath, respDwlContent, respJavaContents, exampleResponseContent, reqDwlContent, reqJavaContents, exampleRequestContent);
         OpenAIResult result = getGptResponse(task, prompt);
         List<String> schemaCode = FileUtil.extractMarkdownCodeBlocks(result.getContent());
 
@@ -170,6 +165,14 @@ public class RamlCompletionService {
             requestMap.put("schema", "!include schema/" + requestSchemaFileName);
             postBodyMap.put("application/json", requestMap);
         }
+    }
+
+    protected List<String> searchMuleFlow(String methodName, String apiPath, String muleFlowXmlContent) throws IOException {
+        String task = "search_" + methodName + "_muleFlow";
+        String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
+        String prompt = String.format(promptTemplate, apiPath, muleFlowXmlContent);
+        OpenAIResult result = getGptResponse(task, prompt);
+        return FileUtil.extractMarkdownCodeBlocks(result.getContent());
     }
 
     protected List<String> searchExamples(String methodName, String apiPath) throws IOException {

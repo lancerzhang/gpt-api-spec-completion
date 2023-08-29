@@ -81,7 +81,7 @@ public class XmlUtil {
         }
     }
 
-    public static String searchMuleXml(String apiName, String projectPath) throws Exception {
+    public static String searchMuleFlowXml(String apiName, String projectPath) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         String folderPath = FileUtil.changeToSystemFileSeparator(projectPath + muleAppPath);
@@ -89,7 +89,7 @@ public class XmlUtil {
         Element root = finalDocument.createElement("mule");
         finalDocument.appendChild(root);
 
-        searchMuleXmlHelper(apiName, folderPath, root, finalDocument, builder);
+        searchMuleFlowXmlHelper(apiName, folderPath, root, finalDocument, builder);
 
         // Convert Document to String
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -100,7 +100,7 @@ public class XmlUtil {
         return stringWriter.toString();
     }
 
-    protected static void searchMuleXmlHelper(String apiName, String folderPath, Element root, Document finalDocument, DocumentBuilder builder) {
+    protected static void searchMuleFlowXmlHelper(String apiName, String folderPath, Element root, Document finalDocument, DocumentBuilder builder) {
         Element flow = findFlow(apiName, folderPath, builder);
         if (flow != null) {
             // Copy over namespace declarations from the mule node
@@ -123,7 +123,7 @@ public class XmlUtil {
             List<String> flowRefs = findFlowRefs(flow);
             for (String refName : flowRefs) {
                 // Recursive call
-                searchMuleXmlHelper(refName, folderPath, root, finalDocument, builder);
+                searchMuleFlowXmlHelper(refName, folderPath, root, finalDocument, builder);
             }
         }
     }

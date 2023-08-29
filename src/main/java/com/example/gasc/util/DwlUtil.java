@@ -2,12 +2,13 @@ package com.example.gasc.util;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DwlUtil {
+
+    private static final String resourcePath = "/src/main/resources/";
 
     /**
      * Get the Java class name from a DWL file.
@@ -17,7 +18,7 @@ public class DwlUtil {
      * @throws IOException If there's an issue reading the file.
      */
     public static String getJavaClassFromDwl(String dwlFileName, String projectPath) throws IOException {
-        String content = new String(Files.readAllBytes(Paths.get(projectPath, "src", "main", "resources", dwlFileName)));
+        String content = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + dwlFileName)));
 
         Pattern pattern = Pattern.compile("class\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = pattern.matcher(content);
@@ -44,7 +45,7 @@ public class DwlUtil {
             String variableName = parts.length > 1 ? parts[0].trim() : null;
             String dwlFileName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
 
-            String fileContent = new String(Files.readAllBytes(Paths.get(projectPath, "src", "main", "resources", dwlFileName)));
+            String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + dwlFileName)));
 
             if (variableName != null) {
                 contentBuilder.append("variableName=").append(variableName)
@@ -54,6 +55,16 @@ public class DwlUtil {
             contentBuilder.append(fileContent).append("\n");
         }
 
+        return contentBuilder.toString();
+    }
+
+    public static String getDwlContent(String dwlFileStr, String projectPath) throws IOException {
+        StringBuilder contentBuilder = new StringBuilder();
+        String[] dwlFilenames = dwlFileStr.split("\\\\n", -1);
+        for (String filename : dwlFilenames) {
+            String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + filename)));
+            contentBuilder.append(fileContent).append("\n");
+        }
         return contentBuilder.toString();
     }
 }

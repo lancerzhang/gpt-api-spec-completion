@@ -9,7 +9,7 @@
       "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "Response:\\n```\\nac_userInfo-example\\n```"
+        "content": "Response:\n```\nac_userInfo-example\n```"
       }
     }
   ],

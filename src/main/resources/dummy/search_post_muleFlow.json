@@ -9,7 +9,7 @@
       "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "Response:\n```\nac_userInfo-example\n```\n\nRequest:\n```\n\n```"
+        "content": "Response DWL files:\n```\ndwl/setAuthReq.dwl\n```\n\nResponse Java classes:\n```\ncom.example.beans.AuthenticationRequest\n```\n\nRequest DWL files:\n```\ndwl/setUserInfoReq.dwl\n```\n\nRequest Java classes:\n```\ncom.example.beans.EmailRequest\n```"
       }
     }
   ],

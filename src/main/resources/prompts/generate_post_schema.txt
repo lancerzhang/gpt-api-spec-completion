@@ -10,14 +10,20 @@ Request Schema:
 <JSD schema detail in json format>
 ```
 
-All dwl file contents:
+All response DWL file contents:
 %s
 
-All java class in dwl:
+All response java classes:
 %s
 
-Response example file content:
+All response  examples:
 %s
 
-Request example file content:
+All request DWL file contents:
+%s
+
+All request java classes:
+%s
+
+All request  examples:
 %s

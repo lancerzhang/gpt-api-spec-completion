@@ -1,0 +1,14 @@
+You are working on a mobile banking Mule API project, you need to write one response schema for API “GET:%s”, the schema relied to  DWL files and Java class, read the Mule flow content carefully and return which DWL files and Java classes should be included in schema. it's possible to have multiple DWL files for request, if no any DWL files or Java class found, then just return empty code block.
+
+Response DWL files:
+```
+<DWL files>
+```
+
+Response Java classes:
+```
+<Java classes>
+```
+
+Mule flow content:
+%s

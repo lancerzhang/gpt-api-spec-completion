@@ -5,11 +5,11 @@ Response Schema:
 <JSD schema detail in json format>
 ```
 
-All dwl file contents:
+All response DWL file contents:
 %s
 
-All java class in dwl:
+All response java classes:
 %s
 
-Response example file content:
+All response  examples:
 %s

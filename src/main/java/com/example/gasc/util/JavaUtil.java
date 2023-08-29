@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JavaUtil {
+    private static final String javaPath = "/src/main/java/";
+
     /**
      * Merges given Java classes into a new one.
      *
@@ -81,7 +83,7 @@ public class JavaUtil {
     }
 
     protected static String getPathFromQualifiedName(String projectPath, String qualifiedName) {
-        return projectPath + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + qualifiedName.replace('.', File.separatorChar) + ".java";
+        return FileUtil.changeToSystemFileSeparator(projectPath + javaPath + qualifiedName.replace('.', File.separatorChar) + ".java");
     }
 
     public static String convertToCamelCase(String input) {
@@ -121,6 +123,19 @@ public class JavaUtil {
         return fileContents;
     }
 
+    public static String getJavaFileContents(String javaClassesStr, String projectPath) throws IOException {
+
+        StringBuilder contentBuilder = new StringBuilder();
+        String[] javaClasses = javaClassesStr.split("\\\\n", -1);
+        for (String javaClass : javaClasses) {
+            Path filePath = getJavaFilePath(projectPath, javaClass);
+            String content = new String(Files.readAllBytes(filePath));
+            contentBuilder.append(content);
+        }
+
+        return contentBuilder.toString();
+    }
+
     /**
      * Convert a fully qualified class name to its corresponding file path.
      *
@@ -130,7 +145,7 @@ public class JavaUtil {
      */
     private static Path getJavaFilePath(String projectRoot, String className) {
         String relativePath = className.replace('.', '/') + ".java";
-        return Paths.get(projectRoot, "src", "main", "java", relativePath);
+        return FileUtil.getPath(projectRoot + javaPath + relativePath);
     }
 
 }
