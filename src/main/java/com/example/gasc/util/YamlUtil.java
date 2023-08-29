@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +80,19 @@ public class YamlUtil {
                 filterData((Map<Object, Object>) dataValue, (Map<Object, Object>) filterValue);
             }
         }
+    }
+
+    public static <T> Map<Object, Object> getPathNode(Map<Object, Object> map, T... keys) {
+        for (int i = 0; i < keys.length - 1; i++) {
+            map.putIfAbsent(keys[i], new HashMap<>());
+            map = (Map<Object, Object>) map.get(keys[i]);
+        }
+
+        if (!map.containsKey(keys[keys.length - 1])) {
+            map.put(keys[keys.length - 1], new HashMap<>());
+        }
+
+        return (Map<Object, Object>) map.get(keys[keys.length - 1]);
     }
 
 }

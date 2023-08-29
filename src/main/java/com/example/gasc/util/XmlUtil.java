@@ -1,24 +1,24 @@
 package com.example.gasc.util;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.nio.file.Paths;
+import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class XmlUtil {
+    private static final String muleAppPath = "/src/main/app/";
 
     public static List<String> findDwl(String flowName, String projectPath) throws Exception {
-        File muleAppDirectory = Paths.get(projectPath, "src", "main", "app").toFile();
+        File muleAppDirectory = FileUtil.getPath(projectPath + muleAppPath).toFile();
         List<String> dwlPaths = new ArrayList<>();
 
         // Start the recursive search from the flowName provided
@@ -47,13 +47,13 @@ public class XmlUtil {
             // Search for the <flow> element with the specified name
             NodeList flowList = doc.getElementsByTagName("flow");
             NodeList subFlowList = doc.getElementsByTagName("sub-flow");
-            processNodeList(flowList, flowName, directory, dwlPaths);
-            processNodeList(subFlowList, flowName, directory, dwlPaths);
+            processNodeListDwl(flowList, flowName, directory, dwlPaths);
+            processNodeListDwl(subFlowList, flowName, directory, dwlPaths);
 
         }
     }
 
-    protected static void processNodeList(NodeList flowList, String flowName, File directory, List<String> dwlPaths) throws Exception {
+    protected static void processNodeListDwl(NodeList flowList, String flowName, File directory, List<String> dwlPaths) throws Exception {
         for (int i = 0; i < flowList.getLength(); i++) {
             Node flowNode = flowList.item(i);
             if (flowNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -81,17 +81,99 @@ public class XmlUtil {
         }
     }
 
-    public static <T> Map<Object, Object> getPathNode(Map<Object, Object> map, T... keys) {
-        for (int i = 0; i < keys.length - 1; i++) {
-            map.putIfAbsent(keys[i], new HashMap<>());
-            map = (Map<Object, Object>) map.get(keys[i]);
-        }
+    public static String searchMuleXml(String apiName, String projectPath) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        String folderPath = FileUtil.changeToSystemFileSeparator(projectPath + muleAppPath);
+        Document finalDocument = builder.newDocument();
+        Element root = finalDocument.createElement("mule");
+        finalDocument.appendChild(root);
 
-        if (!map.containsKey(keys[keys.length - 1])) {
-            map.put(keys[keys.length - 1], new HashMap<>());
-        }
+        searchMuleXmlHelper(apiName, folderPath, root, finalDocument, builder);
 
-        return (Map<Object, Object>) map.get(keys[keys.length - 1]);
+        // Convert Document to String
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        StringWriter stringWriter = new StringWriter();
+        transformer.transform(new DOMSource(finalDocument), new StreamResult(stringWriter));
+
+        return stringWriter.toString();
     }
 
+    protected static void searchMuleXmlHelper(String apiName, String folderPath, Element root, Document finalDocument, DocumentBuilder builder) {
+        Element flow = findFlow(apiName, folderPath, builder);
+        if (flow != null) {
+            // Copy over namespace declarations from the mule node
+            Element originalMuleNode = (Element) flow.getOwnerDocument().getDocumentElement();
+            NamedNodeMap attributes = originalMuleNode.getAttributes();
+            for (int i = 0; i < attributes.getLength(); i++) {
+                Attr attr = (Attr) attributes.item(i);
+                if (attr.getName().startsWith("xmlns:")) {
+                    root.setAttribute(attr.getName(), attr.getValue());
+                }
+            }
+
+            Node copiedFlow = finalDocument.importNode(flow, true);
+
+            // Remove unwanted attributes before appending to root
+            removeUnwantedAttributes((Element) copiedFlow);
+
+            root.appendChild(copiedFlow);
+
+            List<String> flowRefs = findFlowRefs(flow);
+            for (String refName : flowRefs) {
+                // Recursive call
+                searchMuleXmlHelper(refName, folderPath, root, finalDocument, builder);
+            }
+        }
+    }
+
+
+    protected static Element findFlow(String apiName, String folderPath, DocumentBuilder builder) {
+        String[] tags = {"flow", "sub-flow"};
+        for (String tag : tags) {
+            File folder = new File(folderPath);
+            File[] listOfFiles = folder.listFiles();
+            if (listOfFiles != null) {
+                for (File file : listOfFiles) {
+                    if (file.isFile() && file.getName().endsWith(".xml")) {
+                        try {
+                            Document doc = builder.parse(file);
+                            NodeList flows = doc.getElementsByTagName(tag);
+                            for (int i = 0; i < flows.getLength(); i++) {
+                                Element flow = (Element) flows.item(i);
+                                if (flow.getAttribute("name").equals(apiName)) {
+                                    return flow;
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    protected static List<String> findFlowRefs(Element element) {
+        List<String> refs = new ArrayList<>();
+        NodeList flowRefs = element.getElementsByTagName("flow-ref");
+        for (int i = 0; i < flowRefs.getLength(); i++) {
+            Node flowRef = flowRefs.item(i);
+            refs.add(((Element) flowRef).getAttribute("name"));
+        }
+        return refs;
+    }
+
+    protected static void removeUnwantedAttributes(Element element) {
+        String[] unwantedAttributes = {"logger", "exception-strategy", "object-to-string-transformer"};
+        for (String unwanted : unwantedAttributes) {
+            NodeList unwantedNodes = element.getElementsByTagName(unwanted);
+            for (int i = unwantedNodes.getLength() - 1; i >= 0; i--) {
+                Node unwantedNode = unwantedNodes.item(i);
+                unwantedNode.getParentNode().removeChild(unwantedNode);
+            }
+        }
+    }
 }

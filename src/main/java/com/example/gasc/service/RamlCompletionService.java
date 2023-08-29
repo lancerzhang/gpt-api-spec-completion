@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class RamlCompletionService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final String specPath = "/src/main/api/";
-    private final String exampleFolder = "examples";
+    private final String exampleFolder = "examples/";
     @Autowired
     private OpenAIApiService openAIApiService;
     @Autowired
@@ -113,9 +113,10 @@ public class RamlCompletionService {
     }
 
     protected void prepareSchemaGeneration(String methodName, String apiPath, Map<Object, Object> valueNode) throws Exception {
-        Map<Object, Object> requestBodyMap = XmlUtil.getPathNode(valueNode, methodName, "body");
-        Map<Object, Object> responseBodyMap = XmlUtil.getPathNode(valueNode, methodName, "responses", 200, "body");
+        Map<Object, Object> requestBodyMap = YamlUtil.getPathNode(valueNode, methodName, "body");
+        Map<Object, Object> responseBodyMap = YamlUtil.getPathNode(valueNode, methodName, "responses", 200, "body");
         String flowName = methodName + ":" + apiPath + ":mobile_api-config";
+        String allMuleXml = XmlUtil.searchMuleXml(flowName, projectPath);
         logger.debug("flowName: " + flowName);
         List<String> dwlVars = XmlUtil.findDwl(flowName, projectPath);
         logger.debug("dwlVars: " + dwlVars);

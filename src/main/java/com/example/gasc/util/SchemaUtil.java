@@ -11,7 +11,7 @@ import java.nio.file.Path;
 
 public class SchemaUtil {
     private static final String specPath = "/src/main/api/";
-    private static final String schemaFolder = "schema";
+    private static final String schemaFolder = "schema/";
     private static final Logger logger = LoggerFactory.getLogger(SchemaUtil.class);
 
     public static String generateJsonSchema(Class<?> clazz) throws Exception {
