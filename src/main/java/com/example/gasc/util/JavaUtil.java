@@ -1,12 +1,16 @@
 package com.example.gasc.util;
 
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseResult;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.stmt.BlockStmt;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -111,7 +115,7 @@ public class JavaUtil {
      * @return List of file contents.
      * @throws IOException If there's an issue accessing or reading the files.
      */
-    public static List<String> getJavaFileContents(List<String> javaClasses, String projectPath) throws IOException {
+    public static List<String> getSimpleJavaFileContents(List<String> javaClasses, String projectPath) throws IOException {
         List<String> fileContents = new ArrayList<>();
 
         for (String className : javaClasses) {
@@ -123,13 +127,15 @@ public class JavaUtil {
         return fileContents;
     }
 
-    public static String getJavaFileContents(String javaClassesStr, String projectPath) throws IOException {
+    public static String getSimpleJavaFileContents(String javaClassesStr, String projectPath) throws IOException {
 
         StringBuilder contentBuilder = new StringBuilder();
         String[] javaClasses = javaClassesStr.split("\\\\n", -1);
         for (String javaClass : javaClasses) {
-            Path filePath = getJavaFilePath(projectPath, javaClass);
-            String content = new String(Files.readAllBytes(filePath));
+            String filePath = getJavaFilePathStr(projectPath, javaClass);
+            String[] splitArray = javaClass.split("\\.");  // Split the string using the dot as the delimiter
+            String classNameA = splitArray[splitArray.length - 1];
+            String content = extractFieldsIntoNewClass(filePath, classNameA);
             contentBuilder.append(content);
         }
 
@@ -143,9 +149,54 @@ public class JavaUtil {
      * @param className   Fully qualified class name.
      * @return Path corresponding to the Java file.
      */
-    private static Path getJavaFilePath(String projectRoot, String className) {
+    protected static Path getJavaFilePath(String projectRoot, String className) {
         String relativePath = className.replace('.', '/') + ".java";
         return FileUtil.getPath(projectRoot + javaPath + relativePath);
+    }
+
+    protected static String getJavaFilePathStr(String projectRoot, String className) {
+        String relativePath = className.replace('.', '/') + ".java";
+        return FileUtil.changeToSystemFileSeparator(projectRoot + javaPath + relativePath);
+    }
+
+    public static String extractFieldsIntoNewClass(String javaFilePath, String newClassName) {
+        String modifiedSourceCode = "";
+        try {
+            // Load a Java file
+            FileInputStream in = new FileInputStream(javaFilePath);
+            ParseResult<CompilationUnit> parseResult = new JavaParser().parse(in);
+
+            if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
+                CompilationUnit originalCu = parseResult.getResult().get();
+
+                // Create a new CompilationUnit (no package set)
+                CompilationUnit newCu = new CompilationUnit();
+
+                // Create a new class declaration
+                newCu.addClass(newClassName);
+
+                // Get the new class declaration
+                TypeDeclaration<?> newClass = newCu.getClassByName(newClassName).orElse(null);
+
+                // Iterate through all types in the original file (classes, enums, etc.)
+                for (TypeDeclaration<?> type : originalCu.getTypes()) {
+                    // Add all fields to the new class
+                    type.getMembers().stream()
+                            .filter(member -> member instanceof FieldDeclaration)
+                            .forEach(field -> {
+                                if (newClass != null) {
+                                    newClass.addMember(field.clone());
+                                }
+                            });
+                }
+
+                // Convert the modified CompilationUnit back to a String
+                modifiedSourceCode = newCu.toString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return modifiedSourceCode;
     }
 
 }

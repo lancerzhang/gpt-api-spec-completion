@@ -48,7 +48,6 @@ public class RamlCompletionService {
 
     public void process() throws Exception {
         Instant startTime = Instant.now();
-//        CommandUtils.runMvnCompile(projectPath);
 
         // Define the path
         Path dir = FileUtil.getPath(projectPath + specPath + exampleFolder);
@@ -132,7 +131,7 @@ public class RamlCompletionService {
         String respDwlFileStr = codeblocks.get(0);
         String respJavaClassesStr = codeblocks.get(1);
         String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
-        String respJavaContents = JavaUtil.getJavaFileContents(respJavaClassesStr, projectPath);
+        String respJavaContents = JavaUtil.getSimpleJavaFileContents(respJavaClassesStr, projectPath);
 
         String exampleRequestContent = "";
         String reqDwlContent = "";
@@ -143,7 +142,7 @@ public class RamlCompletionService {
             String reqDwlFileStr = codeblocks.get(2);
             String reqJavaClassesStr = codeblocks.get(3);
             reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
-            reqJavaContents = JavaUtil.getJavaFileContents(reqJavaClassesStr, projectPath);
+            reqJavaContents = JavaUtil.getSimpleJavaFileContents(reqJavaClassesStr, projectPath);
         }
 
         String task = "generate_" + methodName + "_schema";

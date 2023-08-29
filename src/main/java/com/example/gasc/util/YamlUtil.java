@@ -55,7 +55,7 @@ public class YamlUtil {
         }
     }
 
-    private static Map<Object, Object> convertTxtToMap(File filterFile) throws IOException {
+    protected static Map<Object, Object> convertTxtToMap(File filterFile) throws IOException {
         List<String> lines = Files.readAllLines(filterFile.toPath());
         Map<Object, Object> yamlStructure = new LinkedHashMap<>();
 

@@ -62,6 +62,7 @@ public class DwlUtil {
         StringBuilder contentBuilder = new StringBuilder();
         String[] dwlFilenames = dwlFileStr.split("\\\\n", -1);
         for (String filename : dwlFilenames) {
+            contentBuilder.append(filename.replace("dwl/", "")).append("\n");
             String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + filename)));
             contentBuilder.append(fileContent).append("\n");
         }
