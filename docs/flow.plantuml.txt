@@ -12,21 +12,17 @@ endif
 :Begin loop for each endpoint and method;
 
 :Foreach endpoint & method:
-  :Search mule flow XML folder;
-
-  :Recursively traverse them;
-
-  :Find all dwl files;
-
-  :Collect all example file names;
-  :Send full API path and example names to ChatGPT;
-  :Receive request and response file names from ChatGPT;
-  :Collect content of java class in DWL files;
-  :Collect content from example files, java files and all DWL files;
+  :Get full mule flow xml;
+  :Send API path and mule flow to ChatGPT;
+  note right: Collect DWL and Java classes using the received content
+  :Receive DWL and Java classes;
+  :Send API path and example file names to ChatGPT;
+  note right: Search names using the received content
+  :Receive request and response example file names;
+  :Collect content of java classes, DWL files and example files;
   :Send content to ChatGPT;
   note right: Generate JSON schema definition using the received content
-  :Receive JSON schema definition from ChatGPT;
-
+  :Receive JSON schema definition;
   :Update API RAML file with schema and examples;
 
 :End loop;
