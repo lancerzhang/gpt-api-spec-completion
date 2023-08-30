@@ -167,7 +167,7 @@ public class XmlUtil {
     }
 
     protected static void removeUnwantedAttributes(Element element) {
-        String[] unwantedAttributes = {"logger", "exception-strategy", "object-to-string-transformer"};
+        String[] unwantedAttributes = {"logger", "exception-strategy", "json:object-to-json-transformer", "http:request"};
         for (String unwanted : unwantedAttributes) {
             NodeList unwantedNodes = element.getElementsByTagName(unwanted);
             for (int i = unwantedNodes.getLength() - 1; i >= 0; i--) {

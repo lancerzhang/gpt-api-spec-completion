@@ -1,14 +1,32 @@
-You are working on a mobile banking Mule API project, you need to write one response schema for API “GET:%s”, the schema relied to  DWL files and Java class, read the Mule flow content carefully and return which DWL files and Java classes should be included in schema. it's possible to have multiple DWL files for request, if no any DWL files or Java class found, then just return empty code block.
+You are working on a mobile banking Mule API project. Your task is to extract content from the given Mule flow XML for the API "GET:%s". Specifically, you need to extract:
 
-Response DWL files:
-```
-<DWL files>
-```
+- Embedded DataWeave (DW) content for response schema
+- DataWeave Language (DWL) resource file references for response schema
+- Java classes used for response schema
 
-Response Java classes:
-```
-<Java classes>
-```
+The output should contain 3 parts in the following order:
+1. Response Embedded DW
+2. Response DWL resource file
+3. Response Java class
 
-Mule flow content:
+Each part should be separated by "---". Do not add any comments or descriptions in the output. If no content is found for a given type, return "N/A" for that section.
+
+Example input:
+<mule>
+    <flow name="post:/users/authentication">
+        <flow-ref name="authenticationFlow"/>
+    </flow>
+    <sub-flow name="authenticationFlow">
+        <json:json-to-object-transformer returnClass=“com.example.bean.AuthResp” />
+    </sub-flow>
+</mule>
+
+Example output:
+N/A
+---
+N/A
+---
+com.example.bean.AuthResp
+
+Now, you need to start extracting content from the Mule flow XML below for the API "GET:%s".
 %s
