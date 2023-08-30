@@ -1,4 +1,4 @@
-You are working on a mobile banking Mule API project. Your task is to extract content from the given Mule flow XML for the API "GET:%s". Specifically, you need to extract:
+You are working on a mobile banking Mule API project. Your task is to extract content from the given Mule flow XML. Specifically, you need to extract:
 
 - Embedded DataWeave (DW) content for response schema
 - DataWeave Language (DWL) resource file references for response schema
@@ -17,7 +17,7 @@ Example input:
         <flow-ref name="authenticationFlow"/>
     </flow>
     <sub-flow name="authenticationFlow">
-        <json:json-to-object-transformer returnClass="com.example.bean.AuthResp" />
+        <json:json-to-object-transformer returnClass="com.example.beans.AuthResp" />
     </sub-flow>
 </mule>
 
@@ -26,7 +26,7 @@ N/A
 ***
 N/A
 ***
-com.example.bean.AuthResp
+com.example.beans.AuthResp
 
 Now, you need to start extracting content from the Mule flow XML below for the API "GET:%s".
 %s

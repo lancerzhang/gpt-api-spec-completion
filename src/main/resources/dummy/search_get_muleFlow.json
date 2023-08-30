@@ -9,7 +9,7 @@
       "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "N/A\n***\nN/A\n***\ncom.example.bean.AuthResp"
+        "content": "N/A\n***\nN/A\n***\ncom.example.beans.AuthResp"
       }
     }
   ],

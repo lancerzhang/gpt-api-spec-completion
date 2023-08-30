@@ -132,6 +132,9 @@ public class JavaUtil {
         StringBuilder contentBuilder = new StringBuilder();
         String[] javaClasses = javaClassesStr.split("\\\\n", -1);
         for (String javaClass : javaClasses) {
+            if (javaClass.equals("N/A")) {
+                continue;
+            }
             String filePath = getJavaFilePathStr(projectPath, javaClass);
             String[] splitArray = javaClass.split("\\.");  // Split the string using the dot as the delimiter
             String classNameA = splitArray[splitArray.length - 1];
@@ -139,7 +142,11 @@ public class JavaUtil {
             contentBuilder.append(content);
         }
 
-        return contentBuilder.toString();
+        String result = contentBuilder.toString();
+        if (result.isEmpty()) {
+            result = "N/A";
+        }
+        return result;
     }
 
     /**

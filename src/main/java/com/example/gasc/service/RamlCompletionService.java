@@ -118,68 +118,72 @@ public class RamlCompletionService {
         logger.debug("flowName: " + flowName);
         String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
 
-        List<String> codeblocks = searchMuleFlow(methodName, apiPath, muleFlowXmlContent);
+        String[] codeblocks = searchMuleFlow(methodName, apiPath, muleFlowXmlContent);
 
-        List<String> exampleFilenames = searchExamples(methodName, apiPath);
+        String[] exampleFilenames = searchExamples(methodName, apiPath);
 
         generateSchema(methodName, apiPath, codeblocks, exampleFilenames, requestBodyMap, responseBodyMap);
 
     }
 
-    protected void generateSchema(String methodName, String apiPath, List<String> codeblocks, List<String> exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
-        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(0));
-        String respDwlFileStr = codeblocks.get(0);
-        String respJavaClassesStr = codeblocks.get(1);
+    protected void generateSchema(String methodName, String apiPath, String[] codeblocks, String[] exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
+        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[0]);
+        String respDwContentStr = codeblocks[0];
+        String respDwlFileStr = codeblocks[1];
+        String respJavaClassesStr = codeblocks[2];
         String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
+        respDwContentStr = respDwContentStr + "\n" + respDwlContent;
         String respJavaContents = JavaUtil.getSimpleJavaFileContents(respJavaClassesStr, projectPath);
 
         String exampleRequestContent = "";
-        String reqDwlContent = "";
+        String reqDwContent = "";
         String reqJavaContents = "";
 
         if (methodName.equals("post")) {
-            exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames.get(1));
-            String reqDwlFileStr = codeblocks.get(2);
-            String reqJavaClassesStr = codeblocks.get(3);
-            reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
+            exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[1]);
+            reqDwContent = codeblocks[3];
+            String reqDwlFileStr = codeblocks[4];
+            String reqJavaClassesStr = codeblocks[5];
+            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
+            reqDwContent = reqDwContent + reqDwlContent;
             reqJavaContents = JavaUtil.getSimpleJavaFileContents(reqJavaClassesStr, projectPath);
         }
 
         String task = "generate_" + methodName + "_schema";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, respDwlContent, respJavaContents, exampleResponseContent, reqDwlContent, reqJavaContents, exampleRequestContent);
+        String prompt = String.format(promptTemplate, apiPath, respDwContentStr, respJavaContents, exampleResponseContent, reqDwContent, reqJavaContents, exampleRequestContent);
         OpenAIResult result = getGptResponse(task, prompt);
-        List<String> schemaCode = FileUtil.extractMarkdownCodeBlocks(result.getContent());
+        String[] schemaCode = FileUtil.splitReturnContent(result.getContent());
 
         Map<String, String> responseMap = new HashMap<>();
         String responseSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/ResponseBody");
-        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode.get(0));
+        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
         responseMap.put("schema", "!include schema/" + responseSchemaFileName);
-        postBodyMap.put("application/json", responseMap);
+        responseBodyMap.put("application/json", responseMap);
 
         if (methodName.equals("post")) {
             Map<String, String> requestMap = new HashMap<>();
             String requestSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
-            String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode.get(1));
+            String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode[1]);
             requestMap.put("schema", "!include schema/" + requestSchemaFileName);
             postBodyMap.put("application/json", requestMap);
         }
     }
 
-    protected List<String> searchMuleFlow(String methodName, String apiPath, String muleFlowXmlContent) throws IOException {
+    protected String[] searchMuleFlow(String methodName, String apiPath, String muleFlowXmlContent) throws IOException {
         String task = "search_" + methodName + "_muleFlow";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, muleFlowXmlContent);
         OpenAIResult result = getGptResponse(task, prompt);
-        return FileUtil.extractMarkdownCodeBlocks(result.getContent());
+        return FileUtil.splitReturnContent(result.getContent());
     }
 
-    protected List<String> searchExamples(String methodName, String apiPath) throws IOException {
+    protected String[] searchExamples(String methodName, String apiPath) throws IOException {
         String task = "search_" + methodName + "_examples";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, examplesFilenames);
         OpenAIResult result = getGptResponse(task, prompt);
-        return FileUtil.extractMarkdownCodeBlocks(result.getContent());
+        return FileUtil.splitReturnContent(result.getContent());
     }
 
     protected void generateSchemaByJava(List<String> javaClasses, String apiPath, Map<Object, Object> postBodyMap) throws Exception {

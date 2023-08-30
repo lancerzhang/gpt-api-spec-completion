@@ -9,7 +9,7 @@
       "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "N/A\n***\nN/A\n***\ncom.example.bean.AuthResp\n***\n%dw 1.0\n%output application/json\n---\n{\nusername:payload.username\n}\n***\nsetAuthReq.dwl\n***\nN/A"
+        "content": "N/A\n***\nN/A\n***\ncom.example.beans.AuthResp\n***\n%dw 1.0\n%output application/json\n---\n{\nusername:payload.username\n}\n***\nsetAuthReq.dwl\n***\nN/A"
       }
     }
   ],

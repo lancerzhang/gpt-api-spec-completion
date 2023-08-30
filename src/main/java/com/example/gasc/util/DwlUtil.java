@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public class DwlUtil {
 
-    private static final String resourcePath = "/src/main/resources/";
+    private static final String dwlResourcePath = "/src/main/resources/dwl/";
 
     /**
      * Get the Java class name from a DWL file.
@@ -18,7 +18,7 @@ public class DwlUtil {
      * @throws IOException If there's an issue reading the file.
      */
     public static String getJavaClassFromDwl(String dwlFileName, String projectPath) throws IOException {
-        String content = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + dwlFileName)));
+        String content = new String(Files.readAllBytes(FileUtil.getPath(projectPath + dwlResourcePath + dwlFileName)));
 
         Pattern pattern = Pattern.compile("class\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = pattern.matcher(content);
@@ -45,7 +45,7 @@ public class DwlUtil {
             String variableName = parts.length > 1 ? parts[0].trim() : null;
             String dwlFileName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
 
-            String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + dwlFileName)));
+            String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + dwlResourcePath + dwlFileName)));
 
             if (variableName != null) {
                 contentBuilder.append("variableName=").append(variableName)
@@ -62,8 +62,12 @@ public class DwlUtil {
         StringBuilder contentBuilder = new StringBuilder();
         String[] dwlFilenames = dwlFileStr.split("\\\\n", -1);
         for (String filename : dwlFilenames) {
-            contentBuilder.append(filename.replace("dwl/", "")).append("\n");
-            String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + resourcePath + filename)));
+            if (filename.equals("N/A")) {
+                continue;
+            }
+            filename = filename.replace("dwl/", "");
+            contentBuilder.append(filename).append("\n");
+            String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + dwlResourcePath + filename)));
             contentBuilder.append(fileContent).append("\n");
         }
         return contentBuilder.toString();
