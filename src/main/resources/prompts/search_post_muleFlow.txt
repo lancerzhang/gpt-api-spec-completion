@@ -29,7 +29,7 @@ username:payload.username
         <dw:transform-message>
             <dw:set-payload variableName="authRequest" resource="classpath:dwl/setAuthReq.dwl"/>
         </dw:transform-message>
-        <json:json-to-object-transformer returnClass=“com.example.bean.AuthResp” />
+        <json:json-to-object-transformer returnClass="com.example.bean.AuthResp" />
     </sub-flow>
 </mule>
 

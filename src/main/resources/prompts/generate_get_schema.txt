@@ -1,15 +1,27 @@
-You are working on a mobile banking Mule API project, you need to write one response schema for API "GET:%s" according to dwl and examples. If there are more than one DWL files or examples, combine them as a new one. That's all information I have, don't ask me again. You should return in below format:
+You are working on a mobile banking Mule API project. Your task is to create JSON Schema Definitions (JSD) for one API response. You may be provided with two types of materials for each schema: DataWeave (DW) code and Java classes that define the object structure. Combine all the relevant fields from these materials into a single schema.
 
-Response Schema:
-```
-<JSD schema detail in json format>
-```
+For the output, provide only the JSON Schema. Do not include any comments or description in the output. If the schema cannot be determined due to insufficient information, just return "N/A".
 
-All response DWL file contents:
-%s
+Example input:
+1. Response DW code
+N/A
+2. Response Java class
+public class AuthenticationResponse {
+    private String result;
+}
 
-All response java classes:
-%s
+Example output (normal):
+{
+  "type" : "object",
+  "properties" : {
+    "result" : {
+      "type" : "string"
+    }
+  }
+}
 
-All response  examples:
+Example output (schema cannot be determined):
+N/A
+
+Now, begin creating the JSON Schema for the API response for "GET:%s" using below materials.
 %s

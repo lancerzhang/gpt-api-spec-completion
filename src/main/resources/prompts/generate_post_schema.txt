@@ -1,29 +1,64 @@
-You are working on a mobile banking Mule API project, you need to write one request and one response schema for API "POST:%s" according to dwl and examples. If there are more than one DWL files or examples, combine them as a new one. That's all information I have, don't ask me again. You should return in below format:
+You are working on a mobile banking Mule API project. Your task is to create JSON Schema Definitions (JSD) for one API request and one API response. You may be provided with two types of materials for each schema: DataWeave (DW) code and Java classes that define the object structure. Combine all the relevant fields from these materials into a single schema for both the request and response.
 
-Response Schema:
-```
-<JSD schema detail in json format>
-```
+For the output, provide only the JSON Schema for each: first the schema for the response and then for the request, separated by "---". Do not include any comments or description in the output. If the schema for either the request or response cannot be determined due to insufficient information, return "N/A" for that section.
 
-Request Schema:
-```
-<JSD schema detail in json format>
-```
+Example input:
+1. Response DW code
+N/A
+2. Response Java class
+public class AuthenticationResponse {
+    private String result;
+}
+3. Request DW code
+setAuthReq.dwl
+%dw 1.0
+%output application/java
+---
+{
+    username:payload.username,
+    password:payload.password
+} as :object {
+    class : "com.example.beans.AuthenticationRequest"
+}
+4. Request Java class
+public class AuthenticationRequest {
+    private String username;
+    private String password;
+}
 
-All response DWL file contents:
-%s
+Example output (normal):
+{
+  "type" : "object",
+  "properties" : {
+    "result" : {
+      "type" : "string"
+    }
+  }
+}
+---
+{
+  "type" : "object",
+  "properties" : {
+    "username" : {
+      "type" : "string"
+    },
+    "password" : {
+      "type" : "string"
+    }
+  }
+}
 
-All response java classes:
-%s
+Example output (only response schema):
+{
+  "type" : "object",
+  "properties" : {
+    "result" : {
+      "type" : "string"
+    }
+  }
+}
+---
+N/A
 
-All response  examples:
-%s
-
-All request DWL file contents:
-%s
-
-All request java classes:
-%s
-
-All request  examples:
+Now, begin creating the JSON Schema for the API request and response for "POST:%s" using below materials.
 %s

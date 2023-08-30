@@ -17,7 +17,7 @@ Example input:
         <flow-ref name="authenticationFlow"/>
     </flow>
     <sub-flow name="authenticationFlow">
-        <json:json-to-object-transformer returnClass=“com.example.bean.AuthResp” />
+        <json:json-to-object-transformer returnClass="com.example.bean.AuthResp" />
     </sub-flow>
 </mule>
 
