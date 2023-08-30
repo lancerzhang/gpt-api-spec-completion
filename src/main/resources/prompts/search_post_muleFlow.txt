@@ -12,7 +12,7 @@ The output should contain 6 parts in the following order:
 5. Request DWL resource file
 6. Request Java class
 
-Each part should be separated by "---". Do not add any comments or descriptions in the output. If no content is found for a given type, return "N/A" for that section.
+Each part should be separated by "***". Do not add any comments or descriptions in the output. If no content is found for a given type, return "N/A" for that section.
 
 Example input:
 <mule>
@@ -22,7 +22,10 @@ Example input:
     <sub-flow name="authenticationFlow">
         <dw:transform-message>
             <dw:set-payload>
-<![CDATA[%dw 1.0 %output application/json --- {
+<![CDATA[%dw 1.0
+%output application/json
+---
+{
 username:payload.username
 } ]]></dw:set-payload>
         </dw:transform-message>
@@ -35,17 +38,20 @@ username:payload.username
 
 Example output:
 N/A
----
+***
 N/A
----
+***
 com.example.bean.AuthResp
+***
+%dw 1.0
+%output application/json
 ---
-%dw 1.0 %output application/json --- {
+{
 username:payload.username
 }
----
+***
 setAuthReq.dwl
----
+***
 N/A
 
 Now, you need to start extracting content from the Mule flow XML below for the API "POST:%s".

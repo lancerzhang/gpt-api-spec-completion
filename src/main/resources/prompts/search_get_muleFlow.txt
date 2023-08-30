@@ -9,7 +9,7 @@ The output should contain 3 parts in the following order:
 2. Response DWL resource file
 3. Response Java class
 
-Each part should be separated by "---". Do not add any comments or descriptions in the output. If no content is found for a given type, return "N/A" for that section.
+Each part should be separated by "***". Do not add any comments or descriptions in the output. If no content is found for a given type, return "N/A" for that section.
 
 Example input:
 <mule>
@@ -23,9 +23,9 @@ Example input:
 
 Example output:
 N/A
----
+***
 N/A
----
+***
 com.example.bean.AuthResp
 
 Now, you need to start extracting content from the Mule flow XML below for the API "GET:%s".

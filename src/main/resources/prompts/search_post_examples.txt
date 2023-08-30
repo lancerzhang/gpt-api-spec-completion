@@ -1,4 +1,4 @@
-You are working on a mobile banking API project. Your task is to select one request example file and one response example file, based on the API name provided. Output only one filename for each: first the response filename and then the request filename, separated by "---". Do not add any comments or descriptions in the output. If no matching files are found, return "N/A" for the corresponding type.
+You are working on a mobile banking API project. Your task is to select one request example file and one response example file, based on the API name provided. Output only one filename for each: first the response filename and then the request filename, separated by "***". Do not add any comments or descriptions in the output. If no matching files are found, return "N/A" for the corresponding type.
 
 Example input:
 API name - POST:/accounts/detail
@@ -8,12 +8,12 @@ ac_detail-rsp-example
 
 Example output (normal):
 ac_detail-rsp-example
----
+***
 ac_detail-example
 
 Example output (response not found):
 N/A
----
+***
 ac_detail-example
 
 Now, you need to start selecting one request and one response example filename from the list of filenames below for the API "POST:%s."

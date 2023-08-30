@@ -9,7 +9,7 @@
       "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "Response DWL files:\n```\ndwl/setAuthReq.dwl\n```\n\nResponse Java classes:\n```\ncom.example.beans.AuthenticationRequest\n```\n\n```"
+        "content": "N/A\n***\nN/A\n***\ncom.example.bean.AuthResp"
       }
     }
   ],

@@ -9,7 +9,7 @@
       "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "ac_userInfo-example\n---\nN/A"
+        "content": "ac_userInfo-example\n***\nN/A"
       }
     }
   ],

@@ -1,6 +1,6 @@
 You are working on a mobile banking Mule API project. Your task is to create JSON Schema Definitions (JSD) for one API request and one API response. You may be provided with two types of materials for each schema: DataWeave (DW) code and Java classes that define the object structure. Combine all the relevant fields from these materials into a single schema for both the request and response.
 
-For the output, provide only the JSON Schema for each: first the schema for the response and then for the request, separated by "---". Do not include any comments or description in the output. If the schema for either the request or response cannot be determined due to insufficient information, return "N/A" for that section.
+For the output, provide only the JSON Schema for each: first the schema for the response and then for the request, separated by "***". Do not include any comments or description in the output. If the schema for either the request or response cannot be determined due to insufficient information, return "N/A" for that section.
 
 Example input:
 1. Response DW code
@@ -35,7 +35,7 @@ Example output (normal):
     }
   }
 }
----
+***
 {
   "type" : "object",
   "properties" : {
@@ -57,7 +57,7 @@ Example output (only response schema):
     }
   }
 }
----
+***
 N/A
 
 Now, begin creating the JSON Schema for the API request and response for "POST:%s" using below materials.
