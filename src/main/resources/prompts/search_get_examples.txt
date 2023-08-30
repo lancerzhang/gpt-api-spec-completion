@@ -1,9 +1,16 @@
-You are working on a mobile banking mule API project, you need to find out the response example files for this API "GET:%s". You should return in below format:
+You are working on a mobile banking API project. Your task is to select one response example file, based on the API name provided. Output only one filename. Do not add any comments or descriptions in the output. If no matching file is found, return "N/A".
 
-Response:
-```
-<Response example file name>
-```
+Example input:
+API name - GET:/accounts/detail
+Filenames -
+ac_detail-example
+ac_detail-rsp-example
 
-All example file name:
+Example output (normal):
+ac_detail-rsp-example
+
+Example output (response not found):
+N/A
+
+Now, you need to start selecting one response example filename from the list of filenames below for the API "GET:%s."
 %s

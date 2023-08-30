@@ -1,14 +1,20 @@
-You are working on a mobile banking mule API project, you need to find out the request and response example files for this API "POST:%s". You should return in below format:
+You are working on a mobile banking API project. Your task is to select one request example file and one response example file, based on the API name provided. Output only one filename for each: first the response filename and then the request filename, separated by "---". Do not add any comments or descriptions in the output. If no matching files are found, return "N/A" for the corresponding type.
 
-Response:
-```
-<Response example file name>
-```
+Example input:
+API name - POST:/accounts/detail
+Filenames -
+ac_detail-example
+ac_detail-rsp-example
 
-Request:
-```
-<Request example file name>
-```
+Example output (normal):
+ac_detail-rsp-example
+---
+ac_detail-example
 
-All example file name:
+Example output (response not found):
+N/A
+---
+ac_detail-example
+
+Now, you need to start selecting one request and one response example filename from the list of filenames below for the API "POST:%s."
 %s
