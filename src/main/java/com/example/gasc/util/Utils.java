@@ -29,8 +29,7 @@ public class Utils {
         return itemList;
     }
 
-
-    public static boolean isAllNA(String[] codeblocks){
+    public static boolean isAllNA(String[] codeblocks) {
         for (String item : codeblocks) {
             if (!item.equals("N/A")) {
                 return false;

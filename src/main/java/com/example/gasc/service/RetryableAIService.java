@@ -61,14 +61,14 @@ public class RetryableAIService {
 
         Map<String, String> responseMap = new HashMap<>();
         String responseSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/ResponseBody");
-        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
+        String responseSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
         responseMap.put("schema", "!include schema/" + responseSchemaFileName);
         responseBodyMap.put("application/json", responseMap);
 
         if (methodName.equals("post")) {
             Map<String, String> requestMap = new HashMap<>();
             String requestSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
-            String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode[1]);
+            String requestSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode[1]);
             requestMap.put("schema", "!include schema/" + requestSchemaFileName);
             postBodyMap.put("application/json", requestMap);
         }
@@ -88,14 +88,16 @@ public class RetryableAIService {
         respDwContentStr = respDwContentStr + "\n" + respDwlContent;
 
         String reqDwContent = "";
+        String requestJavaStr = "";
 
         if (methodName.equals("post")) {
             reqDwContent = codeblocks[3];
             String reqDwlFileStr = codeblocks[4];
             String reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
             reqDwContent = reqDwContent + reqDwlContent;
+            requestJavaStr = codeblocks[5];
         }
-        return new String[]{respDwContentStr, codeblocks[2], reqDwContent, codeblocks[5]};
+        return new String[]{respDwContentStr, codeblocks[2], reqDwContent, requestJavaStr};
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)

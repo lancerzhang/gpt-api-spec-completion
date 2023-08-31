@@ -34,6 +34,7 @@ public class RamlCompletionService {
 
     public void process() throws Exception {
         Instant startTime = Instant.now();
+        CommandUtils.runMvnCompile(projectPath);
 
         // Define the path
         Path dir = FileUtil.getPath(projectPath + specPath + exampleFolder);
@@ -86,50 +87,46 @@ public class RamlCompletionService {
         }
     }
 
-    protected void generateSchema(String methodName, String apiPath, Map<Object, Object> valueNode) throws Exception {
-        Map<Object, Object> requestBodyMap = YamlUtil.getPathNode(valueNode, methodName, "body");
-        Map<Object, Object> responseBodyMap = YamlUtil.getPathNode(valueNode, methodName, "responses", 200, "body");
-        String flowName = methodName + ":" + apiPath + ":mobile_api-config";
+    protected void generateSchema(String httpMethod, String apiPath, Map<Object, Object> valueNode) throws Exception {
+        Map<Object, Object> requestBodyMap = YamlUtil.getPathNode(valueNode, httpMethod, "body");
+        Map<Object, Object> responseBodyMap = YamlUtil.getPathNode(valueNode, httpMethod, "responses", 200, "body");
+        String flowName = httpMethod + ":" + apiPath + ":mobile_api-config";
         logger.debug("flowName: " + flowName);
         String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
-        String[] codeblocks = retryableAIService.searchMuleFlow(projectPath, methodName, apiPath, muleFlowXmlContent);
-        if(Utils.isAllNA(codeblocks)){
+        String[] codeblocks = retryableAIService.searchMuleFlow(projectPath, httpMethod, apiPath, muleFlowXmlContent);
+        if (Utils.isAllNA(codeblocks)) {
             return;
         }
-        String respJavaClassStr=codeblocks[1];
-        String reqJavaClassStr=codeblocks[3];
-        if(!respJavaClassStr.equals("N/A") && !reqJavaClassStr.equals("N/A")){
+        String respJavaClassStr = codeblocks[1];
+        String reqJavaClassStr = codeblocks[3];
+        if (!respJavaClassStr.equals("N/A") && !reqJavaClassStr.equals("N/A")) {
             logger.info("Found java class for both request and response, no need to call ChatGPT.");
-            generateResponseSchemaByJava(methodName,apiPath,respJavaClassStr,responseBodyMap);
-            generateRequestSchemaByJava(methodName,apiPath,reqJavaClassStr,requestBodyMap);
-        }else{
-            retryableAIService.generateSchema(projectPath, methodName, apiPath, codeblocks, requestBodyMap, responseBodyMap);
-        }}
-
-
-    protected void generateResponseSchemaByJava(String methodName, String apiPath, String respJavaClassStr, Map<Object, Object> responseBodyMap) throws Exception {
-
+            generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
+            generateSchemaByJava(httpMethod, "Request", apiPath, reqJavaClassStr, requestBodyMap);
+        } else {
+            retryableAIService.generateSchema(projectPath, httpMethod, apiPath, codeblocks, requestBodyMap, responseBodyMap);
+        }
     }
 
-    protected void generateRequestSchemaByJava(String methodName, String apiPath,String reqJavaClassStr, Map<Object, Object> requestBodyMap) throws Exception {
-        String requestBodyClass = "";
+    protected void generateSchemaByJava(String httpMethod, String type, String apiPath, String reqJavaClassStr, Map<Object, Object> requestBodyMap) throws Exception {
+        String bodyClass = "";
 
         List<String> javaClasses = Utils.getContentItems(reqJavaClassStr);
         if (javaClasses.size() > 1) {
-            String newClassName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
-            requestBodyClass = JavaUtil.mergeClasses(projectPath, javaClasses, newClassName);
+            String newClassName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/" + type + "Body");
+            bodyClass = JavaUtil.mergeClasses(projectPath, javaClasses, newClassName);
         } else if (javaClasses.size() == 1) {
-            requestBodyClass = javaClasses.get(0);
+            bodyClass = javaClasses.get(0);
         }
-        logger.debug("requestBodyClass: " + requestBodyClass);
+        logger.debug("requestBodyClass: " + bodyClass);
 
-        if (!requestBodyClass.isEmpty()) {
+        if (!bodyClass.isEmpty()) {
 
-            Class<?> clazz = JavaUtil.loadClassFromFile(requestBodyClass, projectPath + "/target/classes/");
-            String schema = SchemaUtil.generateJsonSchema(clazz);
+            Class<?> clazz = JavaUtil.loadClassFromFile(bodyClass, projectPath + "/target/classes/");
+            String schema = JsonSchemaUtil.generateJsonSchema(clazz);
 
             // Save schema to file
-            String schemaFileName = SchemaUtil.writeSchema(projectPath, clazz.getSimpleName(), schema);
+            String schemaFileName = JsonSchemaUtil.writeSchema(projectPath, clazz.getSimpleName(), schema);
 
             Map<String, String> innerMap = new HashMap<>();
             innerMap.put("schema", "!include schema/" + schemaFileName);
@@ -137,6 +134,5 @@ public class RamlCompletionService {
             requestBodyMap.put("application/json", innerMap);
         }
     }
-
 
 }
