@@ -1,31 +1,21 @@
 package com.example.gasc.service;
 
-import com.example.gasc.config.GptModel;
-import com.example.gasc.model.openai.Message;
-import com.example.gasc.model.openai.OpenAIResult;
 import com.example.gasc.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Scope("prototype")
@@ -33,14 +23,11 @@ public class RamlCompletionService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final String specPath = "/src/main/api/";
     private final String exampleFolder = "examples/";
-    @Autowired
-    private OpenAIApiService openAIApiService;
-    @Autowired
-    private ResourceLoader resourceLoader;
     private String projectPath;
     private String examplesFilenames;
     @Autowired
-    private GptModel gptModel;
+    private RetryableAIService retryableAIService;
+
 
     public void configure(String projectPath) {
         this.projectPath = projectPath;
@@ -100,16 +87,6 @@ public class RamlCompletionService {
         }
     }
 
-    protected OpenAIResult getGptResponse(String task, String prompt) throws IOException {
-        ArrayList<Message> messages = OpenAIApiService.createInitialMessages();
-        OpenAIApiService.addUserMessages(messages, prompt);
-        logger.debug("Sending prompt to ChatGPT. ");
-        logger.debug(prompt);
-        OpenAIResult result = openAIApiService.post(task, gptModel, messages);
-        logger.debug("Got return from ChatGPT.");
-        logger.debug(result.getContent());
-        return result;
-    }
 
     protected void prepareSchemaGeneration(String methodName, String apiPath, Map<Object, Object> valueNode) throws Exception {
         Map<Object, Object> requestBodyMap = YamlUtil.getPathNode(valueNode, methodName, "body");
@@ -118,87 +95,14 @@ public class RamlCompletionService {
         logger.debug("flowName: " + flowName);
         String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
 
-        String[] codeblocks = searchMuleFlow(methodName, apiPath, muleFlowXmlContent);
+        String[] codeblocks = retryableAIService.searchMuleFlow(projectPath, methodName, apiPath, muleFlowXmlContent);
 
-        String[] exampleFilenames = searchExamples(methodName, apiPath);
+        String[] exampleFilenames = retryableAIService.searchExamples(projectPath, methodName, apiPath, examplesFilenames);
 
-        generateSchema(methodName, apiPath, codeblocks, exampleFilenames, requestBodyMap, responseBodyMap);
+        retryableAIService.generateSchema(projectPath, methodName, apiPath, codeblocks, exampleFilenames, requestBodyMap, responseBodyMap);
 
     }
 
-    protected void generateSchema(String methodName, String apiPath, String[] codeblocks, String[] exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
-        String respDwContentStr = codeblocks[0];
-        String respJavaContents = codeblocks[1];
-        String exampleResponseContent = exampleFilenames[0];
-        String reqDwContent = "";
-        String reqJavaContents = "";
-        String exampleRequestContent = "";
-        if (methodName.equals("post")) {
-            reqDwContent = codeblocks[2];
-            reqJavaContents = codeblocks[3];
-            exampleRequestContent = exampleFilenames[1];
-        }
-        String task = "generate_" + methodName + "_schema";
-        String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, respDwContentStr, respJavaContents, exampleResponseContent, reqDwContent, reqJavaContents, exampleRequestContent);
-        OpenAIResult result = getGptResponse(task, prompt);
-        String[] schemaCode = FileUtil.splitReturnContent(result.getContent());
-
-        Map<String, String> responseMap = new HashMap<>();
-        String responseSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/ResponseBody");
-        String responseSchemaFileName = SchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
-        responseMap.put("schema", "!include schema/" + responseSchemaFileName);
-        responseBodyMap.put("application/json", responseMap);
-
-        if (methodName.equals("post")) {
-            Map<String, String> requestMap = new HashMap<>();
-            String requestSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
-            String requestSchemaFileName = SchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode[1]);
-            requestMap.put("schema", "!include schema/" + requestSchemaFileName);
-            postBodyMap.put("application/json", requestMap);
-        }
-    }
-
-    protected String[] searchMuleFlow(String methodName, String apiPath, String muleFlowXmlContent) throws IOException {
-        String task = "search_" + methodName + "_muleFlow";
-        String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, muleFlowXmlContent);
-        OpenAIResult result = getGptResponse(task, prompt);
-        String[] codeblocks = FileUtil.splitReturnContent(result.getContent());
-        String respDwContentStr = codeblocks[0];
-        String respDwlFileStr = codeblocks[1];
-        String respJavaClassesStr = codeblocks[2];
-        String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
-        respDwContentStr = respDwContentStr + "\n" + respDwlContent;
-        String respJavaContents = JavaUtil.getSimpleJavaFileContents(respJavaClassesStr, projectPath);
-
-        String reqDwContent = "";
-        String reqJavaContents = "";
-
-        if (methodName.equals("post")) {
-            reqDwContent = codeblocks[3];
-            String reqDwlFileStr = codeblocks[4];
-            String reqJavaClassesStr = codeblocks[5];
-            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
-            reqDwContent = reqDwContent + reqDwlContent;
-            reqJavaContents = JavaUtil.getSimpleJavaFileContents(reqJavaClassesStr, projectPath);
-        }
-        return new String[]{respDwContentStr, respJavaContents, reqDwContent, reqJavaContents};
-    }
-
-    protected String[] searchExamples(String methodName, String apiPath) throws IOException {
-        String task = "search_" + methodName + "_examples";
-        String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, examplesFilenames);
-        OpenAIResult result = getGptResponse(task, prompt);
-        String[] exampleFilenames = FileUtil.splitReturnContent(result.getContent());
-        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[0]);
-        String exampleRequestContent = "";
-        if (methodName.equals("post")) {
-            exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[1]);
-        }
-        return new String[]{exampleResponseContent, exampleRequestContent};
-    }
 
     protected void generateSchemaByJava(List<String> javaClasses, String apiPath, Map<Object, Object> postBodyMap) throws Exception {
         String requestBodyClass = "";
@@ -225,10 +129,5 @@ public class RamlCompletionService {
         }
     }
 
-    public String readClasspathFile(String filename) throws IOException {
-        Resource resource = resourceLoader.getResource("classpath:" + filename);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            return reader.lines().collect(Collectors.joining("\n"));
-        }
-    }
+
 }
