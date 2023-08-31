@@ -1,4 +1,4 @@
-You are working on a mobile banking Mule API project. Your task is to create JSON Schema Definitions (JSD) for one API request and one API response. You may be provided with tree types of materials for each schema: DataWeave (DW) code and Java classes that define the object structure, example request and response. Combine all the relevant fields from these materials into a single schema for both the request and response.
+You are working on a mobile banking Mule API project. Your task is to create JSON Schema Definitions (JSD) for one API request and one API response. You may be provided with two types of materials for each schema: DataWeave (DW) code and Java classes that define the object structure. Combine all the relevant fields from these materials into a single schema for both the request and response.
 
 For the output, provide only the JSON Schema for each: first the schema for the response and then for the request, separated by "***". Do not include any comments or description in the output. If the schema for either the request or response cannot be determined due to insufficient information, return "N/A" for that section.
 
@@ -11,12 +11,7 @@ public class AuthenticationResponse {
     private String result;
 }
 
-3. Response example
-{
- "result":"OK"
-}
-
-4. Request DW code
+3. Request DW code
 setAuthReq.dwl
 %%dw 1.0
 %%output application/java
@@ -28,17 +23,12 @@ setAuthReq.dwl
     class : "com.example.beans.AuthenticationRequest"
 }
 
-5. Request Java class
+4. Request Java class
 public class AuthenticationRequest {
     private String username;
     private String password;
 }
 
-6. Request example
-{
- "username":"ben",
- "password":"123"
-}
 
 Example output (normal):
 {
@@ -81,14 +71,8 @@ Now, begin creating the JSON Schema for the API request and response for "POST:%
 2. Response Java class
 %s
 
-3. Response example
+3. Request DW code
 %s
 
-4. Request DW code
-%s
-
-5. Request Java class
-%s
-
-6. Request example
+4. Request Java class
 %s

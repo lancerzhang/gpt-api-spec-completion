@@ -97,9 +97,7 @@ public class RamlCompletionService {
 
         String[] codeblocks = retryableAIService.searchMuleFlow(projectPath, methodName, apiPath, muleFlowXmlContent);
 
-        String[] exampleFilenames = retryableAIService.searchExamples(projectPath, methodName, apiPath, examplesFilenames);
-
-        retryableAIService.generateSchema(projectPath, methodName, apiPath, codeblocks, exampleFilenames, requestBodyMap, responseBodyMap);
+        retryableAIService.generateSchema(projectPath, methodName, apiPath, codeblocks, requestBodyMap, responseBodyMap);
 
     }
 

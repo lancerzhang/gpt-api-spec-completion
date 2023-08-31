@@ -46,22 +46,19 @@ public class RetryableAIService {
     }
 
     @Retryable(maxAttempts = 2, value = IOException.class)
-    protected void generateSchema(String projectPath, String methodName, String apiPath, String[] codeblocks, String[] exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
+    protected void generateSchema(String projectPath, String methodName, String apiPath, String[] codeblocks, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
         logger.info("start to search generate Schema " + methodName + ":" + apiPath);
         String respDwContentStr = codeblocks[0];
         String respJavaContents = codeblocks[1];
-        String exampleResponseContent = exampleFilenames[0];
         String reqDwContent = "";
         String reqJavaContents = "";
-        String exampleRequestContent = "";
         if (methodName.equals("post")) {
             reqDwContent = codeblocks[2];
             reqJavaContents = codeblocks[3];
-            exampleRequestContent = exampleFilenames[1];
         }
         String task = "generate_" + methodName + "_schema";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, respDwContentStr, respJavaContents, exampleResponseContent, reqDwContent, reqJavaContents, exampleRequestContent);
+        String prompt = String.format(promptTemplate, apiPath, respDwContentStr, respJavaContents, reqDwContent, reqJavaContents);
         OpenAIResult result = getGptResponse(task, prompt);
         String[] schemaCode = FileUtil.splitReturnContent(result.getContent());
 
