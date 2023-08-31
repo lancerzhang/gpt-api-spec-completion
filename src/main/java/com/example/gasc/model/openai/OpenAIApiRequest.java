@@ -9,5 +9,5 @@ import java.util.ArrayList;
 @Setter
 public class OpenAIApiRequest {
     private ArrayList<Message> messages;
-    private double temperature = 0.1;
+    private double temperature = 0;
 }

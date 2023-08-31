@@ -127,28 +127,17 @@ public class RamlCompletionService {
     }
 
     protected void generateSchema(String methodName, String apiPath, String[] codeblocks, String[] exampleFilenames, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
-        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[0]);
         String respDwContentStr = codeblocks[0];
-        String respDwlFileStr = codeblocks[1];
-        String respJavaClassesStr = codeblocks[2];
-        String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
-        respDwContentStr = respDwContentStr + "\n" + respDwlContent;
-        String respJavaContents = JavaUtil.getSimpleJavaFileContents(respJavaClassesStr, projectPath);
-
-        String exampleRequestContent = "";
+        String respJavaContents = codeblocks[1];
+        String exampleResponseContent = exampleFilenames[0];
         String reqDwContent = "";
         String reqJavaContents = "";
-
+        String exampleRequestContent = "";
         if (methodName.equals("post")) {
-            exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[1]);
-            reqDwContent = codeblocks[3];
-            String reqDwlFileStr = codeblocks[4];
-            String reqJavaClassesStr = codeblocks[5];
-            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
-            reqDwContent = reqDwContent + reqDwlContent;
-            reqJavaContents = JavaUtil.getSimpleJavaFileContents(reqJavaClassesStr, projectPath);
+            reqDwContent = codeblocks[2];
+            reqJavaContents = codeblocks[3];
+            exampleRequestContent = exampleFilenames[1];
         }
-
         String task = "generate_" + methodName + "_schema";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, respDwContentStr, respJavaContents, exampleResponseContent, reqDwContent, reqJavaContents, exampleRequestContent);
@@ -175,7 +164,26 @@ public class RamlCompletionService {
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, muleFlowXmlContent);
         OpenAIResult result = getGptResponse(task, prompt);
-        return FileUtil.splitReturnContent(result.getContent());
+        String[] codeblocks = FileUtil.splitReturnContent(result.getContent());
+        String respDwContentStr = codeblocks[0];
+        String respDwlFileStr = codeblocks[1];
+        String respJavaClassesStr = codeblocks[2];
+        String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
+        respDwContentStr = respDwContentStr + "\n" + respDwlContent;
+        String respJavaContents = JavaUtil.getSimpleJavaFileContents(respJavaClassesStr, projectPath);
+
+        String reqDwContent = "";
+        String reqJavaContents = "";
+
+        if (methodName.equals("post")) {
+            reqDwContent = codeblocks[3];
+            String reqDwlFileStr = codeblocks[4];
+            String reqJavaClassesStr = codeblocks[5];
+            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
+            reqDwContent = reqDwContent + reqDwlContent;
+            reqJavaContents = JavaUtil.getSimpleJavaFileContents(reqJavaClassesStr, projectPath);
+        }
+        return new String[]{respDwContentStr, respJavaContents, reqDwContent, reqJavaContents};
     }
 
     protected String[] searchExamples(String methodName, String apiPath) throws IOException {
@@ -183,7 +191,13 @@ public class RamlCompletionService {
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, examplesFilenames);
         OpenAIResult result = getGptResponse(task, prompt);
-        return FileUtil.splitReturnContent(result.getContent());
+        String[] exampleFilenames = FileUtil.splitReturnContent(result.getContent());
+        String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[0]);
+        String exampleRequestContent = "";
+        if (methodName.equals("post")) {
+            exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[1]);
+        }
+        return new String[]{exampleResponseContent, exampleRequestContent};
     }
 
     protected void generateSchemaByJava(List<String> javaClasses, String apiPath, Map<Object, Object> postBodyMap) throws Exception {
