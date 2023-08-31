@@ -65,7 +65,7 @@ public class DwlUtil {
             if (filename.equals("N/A")) {
                 continue;
             }
-            filename = filename.replace("dwl/", "");
+            filename = filename.replace("classpath:", "").replace("dwl/", "");
             contentBuilder.append(filename).append("\n");
             String fileContent = new String(Files.readAllBytes(FileUtil.getPath(projectPath + dwlResourcePath + filename)));
             contentBuilder.append(fileContent).append("\n");
