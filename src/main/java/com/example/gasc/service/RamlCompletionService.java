@@ -28,7 +28,6 @@ public class RamlCompletionService {
     @Autowired
     private RetryableAIService retryableAIService;
 
-
     public void configure(String projectPath) {
         this.projectPath = projectPath;
     }
@@ -77,35 +76,47 @@ public class RamlCompletionService {
                 completeSpecHelper(valueNode, apiPath);
 
                 if (valueNode.containsKey("get")) {
-                    prepareSchemaGeneration("get", apiPath, valueNode);
+                    generateSchema("get", apiPath, valueNode);
                 }
 
                 if (valueNode.containsKey("post")) {
-                    prepareSchemaGeneration("post", apiPath, valueNode);
+                    generateSchema("post", apiPath, valueNode);
                 }
             }
         }
     }
 
-
-    protected void prepareSchemaGeneration(String methodName, String apiPath, Map<Object, Object> valueNode) throws Exception {
+    protected void generateSchema(String methodName, String apiPath, Map<Object, Object> valueNode) throws Exception {
         Map<Object, Object> requestBodyMap = YamlUtil.getPathNode(valueNode, methodName, "body");
         Map<Object, Object> responseBodyMap = YamlUtil.getPathNode(valueNode, methodName, "responses", 200, "body");
         String flowName = methodName + ":" + apiPath + ":mobile_api-config";
         logger.debug("flowName: " + flowName);
         String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
-
         String[] codeblocks = retryableAIService.searchMuleFlow(projectPath, methodName, apiPath, muleFlowXmlContent);
+        if(Utils.isAllNA(codeblocks)){
+            return;
+        }
+        String respJavaClassStr=codeblocks[1];
+        String reqJavaClassStr=codeblocks[3];
+        if(!respJavaClassStr.equals("N/A") && !reqJavaClassStr.equals("N/A")){
+            logger.info("Found java class for both request and response, no need to call ChatGPT.");
+            generateResponseSchemaByJava(methodName,apiPath,respJavaClassStr,responseBodyMap);
+            generateRequestSchemaByJava(methodName,apiPath,reqJavaClassStr,requestBodyMap);
+        }else{
+            retryableAIService.generateSchema(projectPath, methodName, apiPath, codeblocks, requestBodyMap, responseBodyMap);
+        }}
 
-        retryableAIService.generateSchema(projectPath, methodName, apiPath, codeblocks, requestBodyMap, responseBodyMap);
+
+    protected void generateResponseSchemaByJava(String methodName, String apiPath, String respJavaClassStr, Map<Object, Object> responseBodyMap) throws Exception {
 
     }
 
-
-    protected void generateSchemaByJava(List<String> javaClasses, String apiPath, Map<Object, Object> postBodyMap) throws Exception {
+    protected void generateRequestSchemaByJava(String methodName, String apiPath,String reqJavaClassStr, Map<Object, Object> requestBodyMap) throws Exception {
         String requestBodyClass = "";
+
+        List<String> javaClasses = Utils.getContentItems(reqJavaClassStr);
         if (javaClasses.size() > 1) {
-            String newClassName = JavaUtil.convertToCamelCase("post" + apiPath + "/RequestBody");
+            String newClassName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
             requestBodyClass = JavaUtil.mergeClasses(projectPath, javaClasses, newClassName);
         } else if (javaClasses.size() == 1) {
             requestBodyClass = javaClasses.get(0);
@@ -123,7 +134,7 @@ public class RamlCompletionService {
             Map<String, String> innerMap = new HashMap<>();
             innerMap.put("schema", "!include schema/" + schemaFileName);
 
-            postBodyMap.put("application/json", innerMap);
+            requestBodyMap.put("application/json", innerMap);
         }
     }
 

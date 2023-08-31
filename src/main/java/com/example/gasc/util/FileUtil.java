@@ -32,16 +32,6 @@ public class FileUtil {
         return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
     }
 
-    public static String[] splitReturnContent(String content) {
-        String[] splitArray = content.split("\\*\\*\\*");
-
-        for (int i = 0; i < splitArray.length; i++) {
-            splitArray[i] = splitArray[i].trim();
-        }
-
-        return splitArray;
-    }
-
     public static List<String> getJsonFilenames(String filenameStr) {
         List<String> paths = new ArrayList<>();
 

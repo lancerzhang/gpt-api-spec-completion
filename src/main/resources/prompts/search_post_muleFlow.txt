@@ -2,15 +2,15 @@ You are working on a mobile banking Mule API project. Your task is to extract co
 
 - Embedded DataWeave (DW) content for both response and request schema
 - DataWeave Language (DWL) resource file references for both response and request schema
-- Java classes used for both response and request schema
+- json:json-to-object-transformer node returnClass attribute used for both response and request schema
 
 The output should contain 6 parts in the following order:
 1. Response Embedded DW
 2. Response DWL resource file
-3. Response Java class
+3. Response returnClass
 4. Request Embedded DW
 5. Request DWL resource file
-6. Request Java class
+6. Request returnClass
 
 Each part should be separated by "***". Do not add any comments or descriptions in the output. If no content is found for a given type, return "N/A" for that section.
 
