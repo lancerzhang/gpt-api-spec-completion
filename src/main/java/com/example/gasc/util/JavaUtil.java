@@ -132,7 +132,7 @@ public class JavaUtil {
         StringBuilder contentBuilder = new StringBuilder();
         String[] javaClasses = javaClassesStr.split("\\\\n", -1);
         for (String javaClass : javaClasses) {
-            if (javaClass.equals("N/A")) {
+            if (javaClass.isEmpty() || javaClass.equals("N/A")) {
                 continue;
             }
             String filePath = getJavaFilePathStr(projectPath, javaClass);

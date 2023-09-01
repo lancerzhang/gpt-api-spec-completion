@@ -1,5 +1,6 @@
 package com.example.gasc.service;
 
+import com.example.gasc.model.openai.SearchMuleFlowResponse;
 import com.example.gasc.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -96,24 +97,26 @@ public class RamlCompletionService {
         String flowName = httpMethod + ":" + apiPath + ":mobile_api-config";
         logger.debug("flowName: " + flowName);
         String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
-        String[] codeblocks = retryableAIService.searchMuleFlow(httpMethod, apiPath, muleFlowXmlContent);
-        if (Utils.isAllNA(codeblocks)) {
+        SearchMuleFlowResponse codes = retryableAIService.searchMuleFlow(httpMethod, apiPath, muleFlowXmlContent);
+        if (codes == null) {
             return;
         }
-        String respJavaClassStr = codeblocks[2];
-        if (respJavaClassStr.equals("N/A") && (httpMethod.equals("get") || codeblocks[5].equals("N/A"))) {
-            retryableAIService.generateSchemaByGPT(projectPath, httpMethod, apiPath, codeblocks, requestBodyMap, responseBodyMap);
+        String respJavaClassStr = codes.getRespJavaClasses();
+        String reqJavaClassStr = codes.getReqJavaClasses();
+        if ("N/A".equals(respJavaClassStr) || (httpMethod.equals("post") && "N/A".equals(reqJavaClassStr))) {
+            retryableAIService.generateSchemaByGPT(projectPath, httpMethod, apiPath, codes, requestBodyMap, responseBodyMap);
         }
 
-        if (!respJavaClassStr.equals("N/A")) {
+        if (!"N/A".equals(respJavaClassStr)) {
             generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
         }
-        if (httpMethod.equals("post") && !codeblocks[5].equals("N/A")) {
-            generateSchemaByJava(httpMethod, "Request", apiPath, codeblocks[5], requestBodyMap);
+        if ("post".equals(httpMethod) && !"N/A".equals(reqJavaClassStr)) {
+            generateSchemaByJava(httpMethod, "Request", apiPath, reqJavaClassStr, requestBodyMap);
         }
     }
 
     protected void generateSchemaByJava(String httpMethod, String type, String apiPath, String reqJavaClassStr, Map<Object, Object> requestBodyMap) throws Exception {
+        logger.info("start to use java to generate schema for " + httpMethod + ":" + apiPath);
         List<String> javaClasses = Utils.getContentItems(reqJavaClassStr);
         List<JsonNode> schemas = new ArrayList<>();
         for (String javaClass : javaClasses) {

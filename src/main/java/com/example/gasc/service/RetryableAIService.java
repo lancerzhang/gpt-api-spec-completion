@@ -3,6 +3,7 @@ package com.example.gasc.service;
 import com.example.gasc.config.GptModel;
 import com.example.gasc.model.openai.Message;
 import com.example.gasc.model.openai.OpenAIResult;
+import com.example.gasc.model.openai.SearchMuleFlowResponse;
 import com.example.gasc.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,20 @@ public class RetryableAIService {
     @Autowired
     private OpenAIApiService openAIApiService;
 
+    private static SearchMuleFlowResponse getSearchMuleFlowResponse(String httpMethod, String[] codeblocks) {
+        SearchMuleFlowResponse searchMuleFlowResponse = new SearchMuleFlowResponse();
+
+        searchMuleFlowResponse.setRespDwContent(codeblocks[0]);
+        searchMuleFlowResponse.setRespDwlFile(codeblocks[1]);
+        searchMuleFlowResponse.setRespJavaClasses(codeblocks[2]);
+        if (httpMethod.equals("post")) {
+            searchMuleFlowResponse.setReqDwContent(codeblocks[3]);
+            searchMuleFlowResponse.setReqDwlFile(codeblocks[4]);
+            searchMuleFlowResponse.setReqJavaClasses(codeblocks[5]);
+        }
+        return searchMuleFlowResponse;
+    }
+
     protected OpenAIResult getGptResponse(String task, String prompt) throws IOException {
         ArrayList<Message> messages = OpenAIApiService.createInitialMessages();
         OpenAIApiService.addUserMessages(messages, prompt);
@@ -43,11 +58,10 @@ public class RetryableAIService {
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)
-    protected void generateSchemaByGPT(String projectPath, String httpMethod, String apiPath, String[] codeblocks, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
+    protected void generateSchemaByGPT(String projectPath, String httpMethod, String apiPath, SearchMuleFlowResponse codes, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
         logger.info("start to use ChatGPT to generate schema for " + httpMethod + ":" + apiPath);
-        String respDwContent = codeblocks[0];
-        String respDwlFile = codeblocks[1];
-        String respDwlContent = DwlUtil.getDwlContent(respDwlFile, projectPath);
+        String respDwContent = codes.getRespDwContent();
+        String respDwlContent = DwlUtil.getDwlContent(codes.getRespDwlFile(), projectPath);
         respDwContent = respDwContent + "\n" + respDwlContent;
         String respJavaClasses = DwlUtil.extractClasses(respDwContent);
         String respJavaContent = JavaUtil.getSimpleJavaFileContents(respJavaClasses, projectPath);
@@ -56,9 +70,8 @@ public class RetryableAIService {
         String reqJavaContent = "";
 
         if (httpMethod.equals("post")) {
-            reqDwContent = codeblocks[3];
-            String reqDwlFile = codeblocks[4];
-            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFile, projectPath);
+            reqDwContent = codes.getReqDwContent();
+            String reqDwlContent = DwlUtil.getDwlContent(codes.getReqDwlFile(), projectPath);
             reqDwContent = reqDwContent + "\n" + reqDwlContent;
             String reqJavaClasses = DwlUtil.extractClasses(reqDwContent);
             reqJavaContent = JavaUtil.getSimpleJavaFileContents(reqJavaClasses, projectPath);
@@ -69,8 +82,7 @@ public class RetryableAIService {
         OpenAIResult result = getGptResponse(task, prompt);
         String[] schemaCode = Utils.splitReturnContent(result.getContent());
 
-        String respJavaClassStr = codeblocks[2];
-        if (respJavaClassStr.equals("N/A")) {
+        if ("N/A".equals(codes.getRespJavaClasses())) {
             // only use ChatGPT result when no returnClass found for response
             Map<String, String> responseMap = new HashMap<>();
             String responseSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/ResponseBody");
@@ -79,7 +91,7 @@ public class RetryableAIService {
             responseBodyMap.put("application/json", responseMap);
         }
 
-        if (httpMethod.equals("post") && codeblocks[5].equals("N/A")) {
+        if ("N/A".equals(codes.getReqJavaClasses())) {
             // only use ChatGPT result when no returnClass found for request
             Map<String, String> requestMap = new HashMap<>();
             String requestSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/RequestBody");
@@ -90,19 +102,17 @@ public class RetryableAIService {
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)
-    protected String[] searchMuleFlow(String httpMethod, String apiPath, String muleFlowXmlContent) throws Exception {
+    protected SearchMuleFlowResponse searchMuleFlow(String httpMethod, String apiPath, String muleFlowXmlContent) throws Exception {
         logger.info("start to search MuleFlow " + httpMethod + ":" + apiPath);
         String task = "search_" + httpMethod + "_muleFlow";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, muleFlowXmlContent);
         OpenAIResult result = getGptResponse(task, prompt);
         String[] codeblocks = Utils.splitReturnContent(result.getContent());
-        if (httpMethod.equals("post") && codeblocks.length != 6) {
-            throw new IllegalArgumentException("searchMuleFlow return must have exactly 6 items");
-        } else if (httpMethod.equals("get") && codeblocks.length != 3) {
-            throw new IllegalArgumentException("searchMuleFlow return must have exactly 3 items");
+        if (Utils.isAllNA(codeblocks)) {
+            return null;
         }
-        return codeblocks;
+        return getSearchMuleFlowResponse(httpMethod, codeblocks);
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)
