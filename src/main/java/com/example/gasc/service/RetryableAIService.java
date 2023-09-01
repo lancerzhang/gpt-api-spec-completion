@@ -43,31 +43,42 @@ public class RetryableAIService {
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)
-    protected void generateSchema(String projectPath, String methodName, String apiPath, String[] codeblocks, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
-        logger.info("start to search generate Schema " + methodName + ":" + apiPath);
-        String respDwContentStr = codeblocks[0];
-        String respJavaContents = codeblocks[1];
+    protected void generateSchemaByGPT(String projectPath, String httpMethod, String apiPath, String[] codeblocks, Map<Object, Object> postBodyMap, Map<Object, Object> responseBodyMap) throws Exception {
+        logger.info("start to use ChatGPT to generate schema for " + httpMethod + ":" + apiPath);
+        String respDwContent = codeblocks[0];
+        String respDwlFile = codeblocks[1];
+        String respDwlContent = DwlUtil.getDwlContent(respDwlFile, projectPath);
+        respDwContent = respDwContent + "\n" + respDwlContent;
+        String respJavaClasses = DwlUtil.extractClasses(respDwContent);
+        String respJavaContent = JavaUtil.getSimpleJavaFileContents(respJavaClasses, projectPath);
+
+        String exampleRequestContent = "";
         String reqDwContent = "";
-        String reqJavaContents = "";
-        if (methodName.equals("post")) {
-            reqDwContent = codeblocks[2];
-            reqJavaContents = codeblocks[3];
+        String reqJavaContent = "";
+
+        if (httpMethod.equals("post")) {
+            reqDwContent = codeblocks[3];
+            String reqDwlFile = codeblocks[4];
+            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFile, projectPath);
+            reqDwContent = reqDwContent + "\n" + reqDwlContent;
+            String reqJavaClasses = DwlUtil.extractClasses(reqDwContent);
+            reqJavaContent = JavaUtil.getSimpleJavaFileContents(reqJavaClasses, projectPath);
         }
-        String task = "generate_" + methodName + "_schema";
+        String task = "generate_" + httpMethod + "_schema";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
-        String prompt = String.format(promptTemplate, apiPath, respDwContentStr, respJavaContents, reqDwContent, reqJavaContents);
+        String prompt = String.format(promptTemplate, apiPath, respDwContent, respJavaContent, reqDwContent, reqJavaContent);
         OpenAIResult result = getGptResponse(task, prompt);
         String[] schemaCode = Utils.splitReturnContent(result.getContent());
 
         Map<String, String> responseMap = new HashMap<>();
-        String responseSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/ResponseBody");
+        String responseSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/ResponseBody");
         String responseSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
         responseMap.put("schema", "!include schema/" + responseSchemaFileName);
         responseBodyMap.put("application/json", responseMap);
 
-        if (methodName.equals("post")) {
+        if (httpMethod.equals("post")) {
             Map<String, String> requestMap = new HashMap<>();
-            String requestSchemaName = JavaUtil.convertToCamelCase(methodName + apiPath + "/RequestBody");
+            String requestSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/RequestBody");
             String requestSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode[1]);
             requestMap.put("schema", "!include schema/" + requestSchemaFileName);
             postBodyMap.put("application/json", requestMap);
@@ -75,42 +86,32 @@ public class RetryableAIService {
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)
-    protected String[] searchMuleFlow(String projectPath, String methodName, String apiPath, String muleFlowXmlContent) throws Exception {
-        logger.info("start to search MuleFlow " + methodName + ":" + apiPath);
-        String task = "search_" + methodName + "_muleFlow";
+    protected String[] searchMuleFlow(String httpMethod, String apiPath, String muleFlowXmlContent) throws Exception {
+        logger.info("start to search MuleFlow " + httpMethod + ":" + apiPath);
+        String task = "search_" + httpMethod + "_muleFlow";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, muleFlowXmlContent);
         OpenAIResult result = getGptResponse(task, prompt);
         String[] codeblocks = Utils.splitReturnContent(result.getContent());
-        String respDwContentStr = codeblocks[0];
-        String respDwlFileStr = codeblocks[1];
-        String respDwlContent = DwlUtil.getDwlContent(respDwlFileStr, projectPath);
-        respDwContentStr = respDwContentStr + "\n" + respDwlContent;
-
-        String reqDwContent = "";
-        String requestJavaStr = "";
-
-        if (methodName.equals("post")) {
-            reqDwContent = codeblocks[3];
-            String reqDwlFileStr = codeblocks[4];
-            String reqDwlContent = DwlUtil.getDwlContent(reqDwlFileStr, projectPath);
-            reqDwContent = reqDwContent + reqDwlContent;
-            requestJavaStr = codeblocks[5];
+        if (httpMethod.equals("post") && codeblocks.length != 6) {
+            throw new IllegalArgumentException("searchMuleFlow return must have exactly 6 items");
+        }else  if(httpMethod.equals("get") && codeblocks.length != 3) {
+            throw new IllegalArgumentException("searchMuleFlow return must have exactly 3 items");
         }
-        return new String[]{respDwContentStr, codeblocks[2], reqDwContent, requestJavaStr};
+        return codeblocks;
     }
 
     @Retryable(maxAttempts = 2, value = Exception.class)
-    protected String[] searchExamples(String projectPath, String methodName, String apiPath, String examplesFilenames) throws Exception {
-        logger.info("start to search examples " + methodName + ":" + apiPath);
-        String task = "search_" + methodName + "_examples";
+    protected String[] searchExamples(String projectPath, String httpMethod, String apiPath, String examplesFilenames) throws Exception {
+        logger.info("start to search examples " + httpMethod + ":" + apiPath);
+        String task = "search_" + httpMethod + "_examples";
         String promptTemplate = readClasspathFile("prompts/" + task + ".txt");
         String prompt = String.format(promptTemplate, apiPath, examplesFilenames);
         OpenAIResult result = getGptResponse(task, prompt);
         String[] exampleFilenames = Utils.splitReturnContent(result.getContent());
         String exampleResponseContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[0]);
         String exampleRequestContent = "";
-        if (methodName.equals("post")) {
+        if (httpMethod.equals("post")) {
             exampleRequestContent = FileUtil.getExamplesContent(projectPath, exampleFilenames[1]);
         }
         return new String[]{exampleResponseContent, exampleRequestContent};

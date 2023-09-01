@@ -2,6 +2,7 @@ package com.example.gasc.util;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,5 +72,18 @@ public class DwlUtil {
             contentBuilder.append(fileContent).append("\n");
         }
         return contentBuilder.toString();
+    }
+
+    public static String extractClasses(String dwlContent) {
+        Pattern pattern = Pattern.compile("class : \"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(dwlContent);
+
+        List<String> classList = new ArrayList<>();
+        while (matcher.find()) {
+            classList.add(matcher.group(1));
+        }
+
+        // Join the class names into a single string separated by line breaks
+        return String.join("\n", classList);
     }
 }

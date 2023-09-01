@@ -1,6 +1,8 @@
 package com.example.gasc.service;
 
 import com.example.gasc.util.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,46 +96,44 @@ public class RamlCompletionService {
         String flowName = httpMethod + ":" + apiPath + ":mobile_api-config";
         logger.debug("flowName: " + flowName);
         String muleFlowXmlContent = XmlUtil.searchMuleFlowXml(flowName, projectPath);
-        String[] codeblocks = retryableAIService.searchMuleFlow(projectPath, httpMethod, apiPath, muleFlowXmlContent);
+        String[] codeblocks = retryableAIService.searchMuleFlow(httpMethod, apiPath, muleFlowXmlContent);
         if (Utils.isAllNA(codeblocks)) {
             return;
         }
-        String respJavaClassStr = codeblocks[1];
-        String reqJavaClassStr = codeblocks[3];
-        if (!respJavaClassStr.equals("N/A") && !reqJavaClassStr.equals("N/A")) {
-            logger.info("Found java class for both request and response, no need to call ChatGPT.");
+        String respJavaClassStr = codeblocks[2];
+        if (httpMethod.equals("get") && !respJavaClassStr.equals("N/A")) {
+            logger.info("start to use java to generate schema for " + httpMethod + ":" + apiPath);
             generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
-            generateSchemaByJava(httpMethod, "Request", apiPath, reqJavaClassStr, requestBodyMap);
+        } else if (httpMethod.equals("post")) {
+            String reqJavaClassStr = codeblocks[5];
+            if (!respJavaClassStr.equals("N/A") && !reqJavaClassStr.equals("N/A")) {
+                logger.info("start to use java to generate schema for " + httpMethod + ":" + apiPath);
+                generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
+                generateSchemaByJava(httpMethod, "Request", apiPath, reqJavaClassStr, requestBodyMap);
+            }
         } else {
-            retryableAIService.generateSchema(projectPath, httpMethod, apiPath, codeblocks, requestBodyMap, responseBodyMap);
+            retryableAIService.generateSchemaByGPT(projectPath, httpMethod, apiPath, codeblocks, requestBodyMap, responseBodyMap);
         }
     }
 
     protected void generateSchemaByJava(String httpMethod, String type, String apiPath, String reqJavaClassStr, Map<Object, Object> requestBodyMap) throws Exception {
-        String bodyClass = "";
-
         List<String> javaClasses = Utils.getContentItems(reqJavaClassStr);
-        if (javaClasses.size() > 1) {
-            String newClassName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/" + type + "Body");
-            bodyClass = JavaUtil.mergeClasses(projectPath, javaClasses, newClassName);
-        } else if (javaClasses.size() == 1) {
-            bodyClass = javaClasses.get(0);
+        List<JsonNode> schemas = new ArrayList<>();
+        for (String javaClass : javaClasses) {
+            Class<?> clazz = JavaUtil.loadClassFromFile(javaClass, projectPath + "/target/classes/");
+            JsonNode schema = JsonSchemaUtil.generateJsonSchemaNode(clazz);
+            schemas.add(schema);
         }
-        logger.debug("requestBodyClass: " + bodyClass);
 
-        if (!bodyClass.isEmpty()) {
+        JsonNode schemaNode = JsonSchemaUtil.mergeAll(schemas);
+        String newClassName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/" + type + "Body");
+        ObjectMapper mapper = new ObjectMapper();
+        String schemaStr = mapper.writeValueAsString(schemaNode);
+        String schemaFileName = JsonSchemaUtil.writeSchema(projectPath, newClassName, schemaStr);
 
-            Class<?> clazz = JavaUtil.loadClassFromFile(bodyClass, projectPath + "/target/classes/");
-            String schema = JsonSchemaUtil.generateJsonSchema(clazz);
-
-            // Save schema to file
-            String schemaFileName = JsonSchemaUtil.writeSchema(projectPath, clazz.getSimpleName(), schema);
-
-            Map<String, String> innerMap = new HashMap<>();
-            innerMap.put("schema", "!include schema/" + schemaFileName);
-
-            requestBodyMap.put("application/json", innerMap);
-        }
+        Map<String, String> innerMap = new HashMap<>();
+        innerMap.put("schema", "!include schema/" + schemaFileName);
+        requestBodyMap.put("application/json", innerMap);
     }
 
 }

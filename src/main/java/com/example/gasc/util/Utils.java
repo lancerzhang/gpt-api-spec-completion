@@ -21,7 +21,7 @@ public class Utils {
 
         for (String item : splitArray) {
             String trimmedItem = item.trim();
-            if (!trimmedItem.isEmpty()) {
+            if (!trimmedItem.isEmpty() && !trimmedItem.equals("N/A")) {
                 itemList.add(trimmedItem);
             }
         }

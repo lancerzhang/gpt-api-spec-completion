@@ -17,12 +17,8 @@ endif
   note right: Collect DWL and Java classes using the received content
   :Receive DWL and Java classes;
     if (Found java class?) then (yes)
-        if (more than one Java class?) then (yes)
-          :Combine them as a new class;
-        else (no)
-          :Proceed with single Java class;
-        endif
         :Generate schema using java classes;
+        :Merge all schemas as one schema;
     else (no)
       :Collect content of DWL files;
       :Send content to ChatGPT;
