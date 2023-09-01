@@ -52,7 +52,6 @@ public class RetryableAIService {
         String respJavaClasses = DwlUtil.extractClasses(respDwContent);
         String respJavaContent = JavaUtil.getSimpleJavaFileContents(respJavaClasses, projectPath);
 
-        String exampleRequestContent = "";
         String reqDwContent = "";
         String reqJavaContent = "";
 
@@ -70,13 +69,18 @@ public class RetryableAIService {
         OpenAIResult result = getGptResponse(task, prompt);
         String[] schemaCode = Utils.splitReturnContent(result.getContent());
 
-        Map<String, String> responseMap = new HashMap<>();
-        String responseSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/ResponseBody");
-        String responseSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
-        responseMap.put("schema", "!include schema/" + responseSchemaFileName);
-        responseBodyMap.put("application/json", responseMap);
+        String respJavaClassStr = codeblocks[2];
+        if (respJavaClassStr.equals("N/A")) {
+            // only use ChatGPT result when no returnClass found for response
+            Map<String, String> responseMap = new HashMap<>();
+            String responseSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/ResponseBody");
+            String responseSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, responseSchemaName, schemaCode[0]);
+            responseMap.put("schema", "!include schema/" + responseSchemaFileName);
+            responseBodyMap.put("application/json", responseMap);
+        }
 
-        if (httpMethod.equals("post")) {
+        if (httpMethod.equals("post") && codeblocks[5].equals("N/A")) {
+            // only use ChatGPT result when no returnClass found for request
             Map<String, String> requestMap = new HashMap<>();
             String requestSchemaName = JavaUtil.convertToCamelCase(httpMethod + apiPath + "/RequestBody");
             String requestSchemaFileName = JsonSchemaUtil.writeSchema(projectPath, requestSchemaName, schemaCode[1]);
@@ -95,7 +99,7 @@ public class RetryableAIService {
         String[] codeblocks = Utils.splitReturnContent(result.getContent());
         if (httpMethod.equals("post") && codeblocks.length != 6) {
             throw new IllegalArgumentException("searchMuleFlow return must have exactly 6 items");
-        }else  if(httpMethod.equals("get") && codeblocks.length != 3) {
+        } else if (httpMethod.equals("get") && codeblocks.length != 3) {
             throw new IllegalArgumentException("searchMuleFlow return must have exactly 3 items");
         }
         return codeblocks;

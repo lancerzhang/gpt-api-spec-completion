@@ -101,18 +101,15 @@ public class RamlCompletionService {
             return;
         }
         String respJavaClassStr = codeblocks[2];
-        if (httpMethod.equals("get") && !respJavaClassStr.equals("N/A")) {
-            logger.info("start to use java to generate schema for " + httpMethod + ":" + apiPath);
-            generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
-        } else if (httpMethod.equals("post")) {
-            String reqJavaClassStr = codeblocks[5];
-            if (!respJavaClassStr.equals("N/A") && !reqJavaClassStr.equals("N/A")) {
-                logger.info("start to use java to generate schema for " + httpMethod + ":" + apiPath);
-                generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
-                generateSchemaByJava(httpMethod, "Request", apiPath, reqJavaClassStr, requestBodyMap);
-            }
-        } else {
+        if (respJavaClassStr.equals("N/A") && (httpMethod.equals("get") || codeblocks[5].equals("N/A"))) {
             retryableAIService.generateSchemaByGPT(projectPath, httpMethod, apiPath, codeblocks, requestBodyMap, responseBodyMap);
+        }
+
+        if (!respJavaClassStr.equals("N/A")) {
+            generateSchemaByJava(httpMethod, "Response", apiPath, respJavaClassStr, responseBodyMap);
+        }
+        if (httpMethod.equals("post") && !codeblocks[5].equals("N/A")) {
+            generateSchemaByJava(httpMethod, "Request", apiPath, codeblocks[5], requestBodyMap);
         }
     }
 
