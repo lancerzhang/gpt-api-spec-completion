@@ -68,7 +68,7 @@ public class JsonSchemaUtil {
     }
 
     public static String writeSchema(String projectPath, String name, String content) throws Exception {
-        String filename = name + ".jsd";
+        String filename = name + ".json";
         Path schemaPath = FileUtil.getPath(projectPath + specPath + schemaFolder + filename);
         logger.info("writing schema: " + schemaPath);
         Files.write(schemaPath, content.getBytes());
