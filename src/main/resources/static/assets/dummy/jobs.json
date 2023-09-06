@@ -1,0 +1,116 @@
+{
+    "content": [
+        {
+            "id": 1,
+            "githubRepo": "https://github.com/moblle/accounts",
+            "branch": "main",
+            "user": {
+                "id": 1,
+                "displayName": "johndoe",
+                "employeeId": "EMP001",
+                "email": "johndoe@example.com",
+                "budget": 1000.0,
+                "createdAt": "2023-08-13T08:10:23.058+00:00",
+                "lastModified": "2023-08-13T08:10:23.058+00:00"
+            },
+            "startTime": "2023-08-01T09:00:00Z",
+            "status": "COMPLETED",
+            "endTime": "2023-08-01T11:00:00Z",
+            "duration": 120,
+            "cost": 5.08
+        },
+        {
+            "id": 2,
+            "githubRepo": "https://github.com/moblle/transfer",
+            "branch": "main",
+            "user": {
+                "id": 1,
+                "displayName": "janedoe",
+                "employeeId": "EMP002",
+                "email": "janedoe@example.com",
+                "budget": 1000.0,
+                "createdAt": "2023-08-13T08:10:23.058+00:00",
+                "lastModified": "2023-08-13T08:10:23.058+00:00"
+            },
+            "startTime": "2023-08-02T09:00:00Z",
+            "status": "IN_PROGRESS",
+            "endTime": null,
+            "duration": null,
+            "cost": 0.0
+        },
+        {
+            "id": 3,
+            "githubRepo": "https://github.com/moblle/notification",
+            "branch": "main",
+            "user": {
+                "id": 1,
+                "displayName": "bob",
+                "employeeId": "EMP003",
+                "email": "bob@example.com",
+                "budget": 1000.0,
+                "createdAt": "2023-08-13T08:10:23.058+00:00",
+                "lastModified": "2023-08-13T08:10:23.058+00:00"
+            },
+            "startTime": "2023-08-03T09:00:00Z",
+            "status": "COMPLETED",
+            "endTime": "2023-08-03T12:00:00Z",
+            "duration": 180,
+            "cost": 2.60
+        },
+        {
+            "id": 4,
+            "githubRepo": "https://github.com/banking/login",
+            "branch": "main",
+            "user": {
+                "id": 1,
+                "displayName": "alice",
+                "employeeId": "EMP004",
+                "email": "alice@example.com",
+                "budget": 1000.0,
+                "createdAt": "2023-08-13T08:10:23.058+00:00",
+                "lastModified": "2023-08-13T08:10:23.058+00:00"
+            },
+            "startTime": "2023-08-04T09:00:00Z",
+            "status": "NOT_STARTED",
+            "endTime": null,
+            "duration": null,
+            "cost": 0.0
+        },
+        {
+            "id": 5,
+            "githubRepo": "https://github.com/banking/messages",
+            "branch": "main",
+            "user": {
+                "id": 1,
+                "displayName": "charlie",
+                "employeeId": "EMP005",
+                "email": "charlie@example.com",
+                "budget": 1000.0,
+                "createdAt": "2023-08-13T08:10:23.058+00:00",
+                "lastModified": "2023-08-13T08:10:23.058+00:00"
+            },
+            "startTime": "2023-08-05T09:00:00Z",
+            "status": "ERROR",
+            "endTime": "2023-08-05T10:00:00Z",
+            "duration": 60,
+            "cost": 3.74
+        }
+    ],
+    "pageable": {
+        "pageNumber": 0,
+        "pageSize": 5
+    },
+    "totalPages": 10,
+    "totalElements": 50,
+    "last": false,
+    "first": true,
+    "sort": {
+        "sorted": false,
+        "unsorted": true,
+        "empty": true
+    },
+    "number": 0,
+    "numberOfElements": 5,
+    "size": 5,
+    "empty": false
+}

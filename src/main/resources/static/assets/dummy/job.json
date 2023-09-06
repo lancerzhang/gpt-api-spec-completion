@@ -1,0 +1,19 @@
+{
+    "id": 1,
+    "githubRepo": "https://github.com/lancerzhang/survey-server",
+    "branch": "main",
+    "user": {
+        "id": 1,
+        "displayName": "sampleUser",
+        "employeeId": "01234567",
+        "email": "sample.user@example.com",
+        "budget": 1000.0,
+        "createdAt": "2023-08-13T08:10:23.058+00:00",
+        "lastModified": "2023-08-13T08:10:23.058+00:00"
+    },
+    "startTime": "2023-08-01T09:00:00Z",
+    "status": "COMPLETED",
+    "endTime": "2023-08-01T11:00:00Z",
+    "duration": 120,
+    "cost": 5.08
+}
